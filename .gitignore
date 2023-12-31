@@ -1,0 +1,8 @@
+/.coverage/
+/.env
+/config.toml
+/data.db*
+/storage/
+/target
+/uploads/
+/.idea/
