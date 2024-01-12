@@ -44,11 +44,6 @@ pub fn license_page() -> String {
 
             <h3>Multiple Licenses</h3>
 
-            <p>This repository has multiple licenses depending on the content type, the date of contributions or stemming from external component licenses that were not developed by any of Torrust team members or Torrust repository contributors.</p>
-
-            <p>The two main applicable license to most of its content are:</p>
-
-            <p>If you want to read more about all the licenses and how they apply please refer to the <a href="https://github.com/torrust/torrust-index/blob/develop/licensing/contributor_agreement_v01.md">contributor agreement</a>.</p>
         </body>
         <footer style="padding: 1.25em 0;border-top: dotted 1px;">
             <a href="/{API_VERSION_URL_PREFIX}/about">about</a>

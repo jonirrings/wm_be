@@ -6,13 +6,19 @@ use crate::bootstrap::logging;
 use crate::common::AppData;
 use crate::config::Configuration;
 use crate::databases::database;
-use crate::web;
+use crate::services::authentication::{DbUserAuthenticationRepository, JsonWebToken, Service};
+use crate::services::user::{self, DbBannedUserList, DbUserProfileRepository, DbUserRepository};
+use crate::web::api::v1::auth::Authentication;
 use crate::web::api::Version;
+use crate::{mailer, web};
+use crate::services::room;
+use crate::services::room::DbRoomRepository;
 
 pub struct Running {
     pub api_socket_addr: SocketAddr,
     pub api_server: Option<JoinHandle<std::result::Result<(), std::io::Error>>>,
 }
+
 #[allow(clippy::too_many_lines)]
 pub async fn run(configuration: Configuration, api_version: &Version) -> Running {
     let log_level = configuration.settings.read().await.log_level.clone();
@@ -36,9 +42,52 @@ pub async fn run(configuration: Configuration, api_version: &Version) -> Running
     // Build app dependencies
 
     let database = Arc::new(database::connect(&database_connect_url).await.expect("Database error."));
+    let json_web_token = Arc::new(JsonWebToken::new(configuration.clone()));
+    let auth = Arc::new(Authentication::new(json_web_token.clone()));
+    // Repositories
+    let user_repository = Arc::new(DbUserRepository::new(database.clone()));
+    let user_authentication_repository = Arc::new(DbUserAuthenticationRepository::new(database.clone()));
+    let user_profile_repository = Arc::new(DbUserProfileRepository::new(database.clone()));
+    let banned_user_list = Arc::new(DbBannedUserList::new(database.clone()));
+    let room_repository = Arc::new(DbRoomRepository::new(database.clone()));
+    // Services
+    let mailer_service = Arc::new(mailer::Service::new(configuration.clone()).await);
+    let registration_service = Arc::new(user::RegistrationService::new(
+        configuration.clone(),
+        mailer_service.clone(),
+        user_repository.clone(),
+        user_profile_repository.clone(),
+    ));
+    let ban_service = Arc::new(user::BanService::new(
+        user_repository.clone(),
+        user_profile_repository.clone(),
+        banned_user_list.clone(),
+    ));
+    let room_service = Arc::new(room::Service::new(configuration.clone(), room_repository.clone()));
+    let authentication_service = Arc::new(Service::new(
+        configuration.clone(),
+        json_web_token.clone(),
+        user_repository.clone(),
+        user_profile_repository.clone(),
+        user_authentication_repository.clone(),
+    ));
     // Build app container
-    let app_data = Arc::new(AppData::new(configuration.clone(),
-                                         database.clone(),));
+    let app_data = Arc::new(AppData::new(
+        configuration.clone(),
+        database.clone(),
+        json_web_token.clone(),
+        auth.clone(),
+        authentication_service,
+        mailer_service,
+        user_repository,
+        user_authentication_repository,
+        user_profile_repository,
+        banned_user_list,
+        room_repository,
+        registration_service,
+        ban_service,
+        room_service,
+    ));
     // Start API server
     let running_api = web::api::start(app_data, &net_ip, net_port, api_version).await;
     Running {

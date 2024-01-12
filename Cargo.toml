@@ -31,18 +31,25 @@ version = "0.1.0"
 
 [dependencies]
 argon2 = "0.5.2"
-async-graphql = "6.0.11"
+#async-graphql = "7.0.0"
 async-trait = "0.1.77"
-axum = { version = "0.7.3", features = ["multipart", "http2", "ws", 'tracing'] }
+axum = { version = "0.7.4", features = ["multipart", "http2", "ws", 'tracing'] }
 chrono = { version = "0.4.31", default-features = false, features = ["clock"] }
 config = "0.13.4"
+derive_more = "0.99.17"
+email_address = "0.2.4"
 fern = "0.6.2"
 futures = "0.3.30"
 hyper = "1.1.0"
+jsonwebtoken = "9"
 lazy_static = "1.4.0"
+lettre = { version = "0", features = ["builder", "smtp-transport", "tokio1", "tokio1-native-tls", "tokio1-rustls-tls"] }
 listenfd = "1.0.1"
 located-error = { path = "packages/located-error" }
 log = "0.4.20"
+pbkdf2 = { version = "0.12.2", features = ["simple"] }
+rand_core = { version = "0.6.4", features = ["std"] }
+regex = "1.10.2"
 rustversion = "1.0.14"
 serde = { version = "1", features = ["rc"] }
 serde_bencode = "0"
@@ -51,9 +58,11 @@ serde_derive = "1"
 serde_json = "1"
 sha-1 = "0"
 sqlx = { version = "0.7", features = ["migrate", "mysql", "sqlite", "postgres", "runtime-tokio-native-tls", "time"] }
+tera = { version = "1", default-features = false }
 thiserror = "1.0.56"
 tokio = { version = "1", features = ["fs", "io-util", "macros", "net", "rt-multi-thread", "signal", "sync", "time"] }
-tower-http = { version = "0.5.0", features = ["compression-full", "cors", "timeout", "trace"] }
+toml = "0.8.8"
+tower-http = { version = "0.5.1", features = ["compression-full", "cors", "timeout", "trace"] }
 
 [dev-dependencies]
 rand = "0"

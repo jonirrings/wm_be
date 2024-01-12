@@ -5,7 +5,7 @@
 # Generate the Index sqlite database directory and file if it does not exist
 mkdir -p ./storage/database
 
-if ! [ -f "./storage/database/sqlite3.db" ]; then
-    echo "Creating database 'sqlite3.db'"
-    sqlite3 "./storage/database/sqlite3.db" "VACUUM;"
+if ! [ -f "./storage/database/wm.sqlite" ]; then
+    echo "Creating database 'wm.sqlite'"
+    sqlite3 "./storage/database/wm.sqlite" "VACUUM;"
 fi

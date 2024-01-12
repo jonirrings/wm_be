@@ -1,5 +1,7 @@
 # warehouse management backend
 > for cyus requirement
+> 
+> inspired by torrust (most code was copied from torrust)
 
 # tag
 a tag with name, SN, shelf no and a QR/Bar Code

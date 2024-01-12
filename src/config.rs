@@ -158,7 +158,7 @@ pub struct Database {
 impl Default for Database {
     fn default() -> Self {
         Self {
-            connect_url: "sqlite://data.db?mode=rwc".to_string(),
+            connect_url: "sqlite://wm.sqlite?mode=rwc".to_string(),
         }
     }
 }
@@ -291,7 +291,35 @@ impl Default for Configuration {
 }
 
 impl Configuration {
-    pub async fn load_from_file(config_path: &str) { unimplemented!("load_from_file") }
+    pub async fn load_from_file(config_path: &str) -> Result<Configuration, ConfigError> {
+        let config_builder = Config::builder();
+
+        #[allow(unused_assignments)]
+            let mut config = Config::default();
+
+        if Path::new(config_path).exists() {
+            config = config_builder.add_source(File::with_name(config_path)).build()?;
+        } else {
+            warn!("No config file found. Creating default config file ...");
+
+            let config = Configuration::default();
+            let () = config.save_to_file(config_path).await;
+
+            return Err(ConfigError::Message(format!(
+                "No config file found. Created default config file in {config_path}. Edit the file and start the application."
+            )));
+        }
+
+        let wm_config: WarehouseIndex = match config.try_deserialize() {
+            Ok(data) => Ok(data),
+            Err(e) => Err(ConfigError::Message(format!("Errors while processing config: {e}."))),
+        }?;
+
+        Ok(Configuration {
+            settings: RwLock::new(wm_config),
+            config_path: Some(config_path.to_string()),
+        })
+    }
     pub fn load(info: &Info) -> Result<Configuration, Error> {
         let config_builder = Config::builder()
             .add_source(File::from_str(&info.index, FileFormat::Toml))
@@ -303,9 +331,53 @@ impl Configuration {
             config_path: None,
         })
     }
-    pub async fn save_to_file(&self, config_path: &str) { unimplemented!("save_to_file") }
-    pub async fn get_all(&self) { unimplemented!("get_all") }
-    pub async fn get_public(&self) { unimplemented!("get_public") }
-    pub async fn get_site_name(&self) { unimplemented!("get_site_name") }
-    pub async fn get_api_base_url(&self) { unimplemented!("get_api_base_url") }
+
+    /// Returns the save to file of this [`Configuration`].
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if it can't write to the file.
+    pub async fn save_to_file(&self, config_path: &str) {
+        let settings = self.settings.read().await;
+
+        let toml_string = toml::to_string(&*settings).expect("Could not encode TOML value");
+
+        drop(settings);
+
+        fs::write(config_path, toml_string).expect("Could not write to file!");
+    }
+
+    pub async fn get_all(&self) -> WarehouseIndex {
+        let settings_lock = self.settings.read().await;
+
+        settings_lock.clone()
+    }
+
+    pub async fn get_public(&self) -> ConfigurationPublic {
+        let settings_lock = self.settings.read().await;
+
+        ConfigurationPublic {
+            website_name: settings_lock.website.name.clone(),
+            email_on_signup: settings_lock.auth.email_on_signup.clone(),
+        }
+    }
+
+    pub async fn get_site_name(&self) -> String {
+        let settings_lock = self.settings.read().await;
+
+        settings_lock.website.name.clone()
+    }
+
+    pub async fn get_api_base_url(&self) -> Option<String> {
+        let settings_lock = self.settings.read().await;
+
+        settings_lock.net.base_url.clone()
+    }
+}
+/// The public index configuration.
+/// There is an endpoint to get this configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConfigurationPublic {
+    website_name: String,
+    email_on_signup: EmailOnSignup,
 }

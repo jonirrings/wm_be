@@ -9,7 +9,7 @@ use tower_http::compression::CompressionLayer;
 use tower_http::cors::CorsLayer;
 
 use super::contexts::about::handlers::about_page_handler;
-use super::contexts::{about};
+use super::contexts::{about,user,room};
 use crate::bootstrap::config::ENV_VAR_CORS_PERMISSIVE;
 use crate::common::AppData;
 
@@ -18,6 +18,8 @@ pub const API_VERSION_URL_PREFIX: &str = "v1";
 #[allow(clippy::needless_pass_by_value)]
 pub fn router(app_data: Arc<AppData>) -> Router {
     let v1_api_routes = Router::new()
+        .nest("/user", user::routes::router(app_data.clone()))
+        .nest("/rooms", room::routes::router(app_data.clone()))
         .nest("/about", about::routes::router(app_data.clone()));
 
     let router = Router::new()

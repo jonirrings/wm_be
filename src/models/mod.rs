@@ -1,3 +1,4 @@
+pub mod category;
 pub mod file;
 pub mod item;
 pub mod permission;

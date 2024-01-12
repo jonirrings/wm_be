@@ -13,7 +13,7 @@ max_password_length = 64
 secret_key = "MaxVerstappenWC2021"
 
 [database]
-connect_url = "sqlite://storage/database/sqlite3.db?mode=rwc"
+connect_url = "sqlite://storage/database/wm.sqlite?mode=rwc"
 
 [mail]
 email_verification_enabled = false

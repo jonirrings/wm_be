@@ -7,7 +7,6 @@ pub type UserId = i64;
 pub struct User {
     pub user_id: UserId,
     pub created_at: Option<String>,
-    pub updated_at: Option<String>,
     pub administrator: bool,
 }
 
@@ -27,6 +26,7 @@ pub struct UserProfile {
     pub email_verified: bool,
     pub bio: String,
     pub avatar: String,
+    pub updated_at: Option<String>,
 }
 
 #[allow(clippy::module_name_repetitions)]
@@ -41,8 +41,8 @@ pub struct UserCompact {
 #[derive(Debug, Serialize, Deserialize, Clone, sqlx::FromRow)]
 pub struct UserFull {
     pub user_id: UserId,
-    pub date_registered: Option<String>,
-    pub date_imported: Option<String>,
+    pub created_at: Option<String>,
+    pub updated_at: Option<String>,
     pub administrator: bool,
     pub username: String,
     pub email: String,
