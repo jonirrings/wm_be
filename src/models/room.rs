@@ -7,5 +7,5 @@ pub type RoomId = i64;
 pub struct Room {
     pub room_id: RoomId,
     pub name: String,
-    pub description: Option<String>
+    pub description: Option<String>,
 }

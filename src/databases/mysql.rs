@@ -6,7 +6,7 @@ use chrono::NaiveDateTime;
 use sqlx::mysql::{MySqlConnectOptions, MySqlPoolOptions};
 use sqlx::{query, query_as, Acquire, ConnectOptions, MySqlPool};
 
-use crate::databases::database::{ Database, Driver, Sorting};
+use crate::databases::database::{Database, Driver, Sorting};
 
 pub struct Mysql {
     pub pool: MySqlPool,

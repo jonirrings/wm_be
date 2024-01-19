@@ -12,7 +12,7 @@ use super::forms::{AddRoomForm, UpdateRoomForm};
 use crate::common::AppData;
 use crate::errors::ServiceError;
 use crate::models::room::{Room, RoomId};
-use crate::services::room::ListingRequest;
+use crate::common::ListingCriteria;
 use crate::web::api::v1::auth::get_optional_logged_in_user;
 use crate::web::api::v1::extractors::bearer_token::Extract;
 use crate::web::api::v1::responses::OkResponseData;
@@ -50,17 +50,17 @@ pub async fn update_handler(Extension(app_data): Extension<Arc<AppData>>,
                             Extract(maybe_bearer_token): Extract,
                             Path(room_id): Path<RoomId>,
                             Json(room_form): Json<UpdateRoomForm>, ) -> Response {
-    if let Some(name) = &room_form.name{
-        return match app_data.room_service.update_room_name(&room_id,&name).await {
+    if let Some(name) = &room_form.name {
+        return match app_data.room_service.update_room_name(&room_id, &name).await {
             Ok(_) => responses::mutated_room(room_id).into_response(),
             Err(error) => error.into_response(),
-        }
+        };
     }
-    if let Some(desc) = &room_form.description{
-        return match app_data.room_service.update_room_desc(&room_id,&desc).await {
+    if let Some(desc) = &room_form.description {
+        return match app_data.room_service.update_room_desc(&room_id, &desc).await {
             Ok(_) => responses::mutated_room(room_id).into_response(),
             Err(error) => error.into_response(),
-        }
+        };
     }
     ServiceError::PayloadNotValid.into_response()
 }
@@ -84,9 +84,10 @@ pub async fn get_handler(
 #[allow(clippy::unused_async)]
 pub async fn get_all_handler(Extension(app_data): Extension<Arc<AppData>>,
                              Extract(maybe_bearer_token): Extract,
-                             Query(criteria): Query<ListingRequest>,) -> Response{
-    match app_data.room_service.get_rooms(&criteria).await {
-        Ok(torrents_response) => Json(OkResponseData { data: torrents_response }).into_response(),
+                             Query(criteria): Query<ListingCriteria>, ) -> Response {
+    let spec = app_data.cfg.spec_from_criteria(&criteria).await;
+    match app_data.room_service.get_rooms(&spec).await {
+        Ok(rooms) => Json(OkResponseData { data: rooms }).into_response(),
         Err(error) => error.into_response(),
     }
 }

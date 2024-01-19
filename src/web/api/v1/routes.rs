@@ -4,28 +4,34 @@ use std::sync::Arc;
 use axum::extract::DefaultBodyLimit;
 use axum::routing::get;
 use axum::{Extension, Json, Router};
+use axum::http::StatusCode;
 use serde_json::{json, Value};
 use tower_http::compression::CompressionLayer;
 use tower_http::cors::CorsLayer;
-
-use super::contexts::about::handlers::about_page_handler;
-use super::contexts::{about, user, room};
+//fixme we may use tower_http::auth layer
+use super::contexts::{about, user, room, shelf, item};
 use crate::bootstrap::config::ENV_VAR_CORS_PERMISSIVE;
 use crate::common::AppData;
 
 pub const API_VERSION_URL_PREFIX: &str = "v1";
+
+async fn fallback() -> (StatusCode, &'static str) {
+    (StatusCode::NOT_FOUND, "Not Found")
+}
 
 #[allow(clippy::needless_pass_by_value)]
 pub fn router(app_data: Arc<AppData>) -> Router {
     let v1_api_routes = Router::new()
         .nest("/user", user::routes::router())
         .nest("/rooms", room::routes::router())
-        .nest("/about", about::routes::router());
+        .nest("/shelf", shelf::routes::router())
+        .nest("/items", item::routes::router());
 
     let router = Router::new()
-        .route("/", get(about_page_handler))
+        .nest("/about", about::routes::router())
         .route("/health_check", get(health_check_handler))
-        .nest(&format!("/{API_VERSION_URL_PREFIX}"), v1_api_routes);
+        .nest(&format!("/{API_VERSION_URL_PREFIX}"), v1_api_routes)
+        .fallback(fallback);
 
 
     let router = if env::var(ENV_VAR_CORS_PERMISSIVE).is_ok() {

@@ -11,8 +11,9 @@ use crate::services::user::{self, DbBannedUserList, DbUserProfileRepository, DbU
 use crate::web::api::v1::auth::Authentication;
 use crate::web::api::Version;
 use crate::{mailer, web};
-use crate::services::room;
-use crate::services::room::DbRoomRepository;
+use crate::services::room::{self, DbRoomRepository};
+use crate::services::shelf::{self, DbShelfRepository};
+use crate::services::item::{self, DbItemRepository};
 
 pub struct Running {
     pub api_socket_addr: SocketAddr,
@@ -50,6 +51,8 @@ pub async fn run(configuration: Configuration, api_version: &Version) -> Running
     let user_profile_repository = Arc::new(DbUserProfileRepository::new(database.clone()));
     let banned_user_list = Arc::new(DbBannedUserList::new(database.clone()));
     let room_repository = Arc::new(DbRoomRepository::new(database.clone()));
+    let shelf_repository = Arc::new(DbShelfRepository::new(database.clone()));
+    let item_repository = Arc::new(DbItemRepository::new(database.clone()));
     // Services
     let mailer_service = Arc::new(mailer::Service::new(configuration.clone()).await);
     let registration_service = Arc::new(user::RegistrationService::new(
@@ -63,7 +66,9 @@ pub async fn run(configuration: Configuration, api_version: &Version) -> Running
         user_profile_repository.clone(),
         banned_user_list.clone(),
     ));
-    let room_service = Arc::new(room::Service::new(configuration.clone(), room_repository.clone()));
+    let room_service = Arc::new(room::Service::new(room_repository.clone()));
+    let shelf_service = Arc::new(shelf::Service::new(shelf_repository.clone()));
+    let item_service = Arc::new(item::Service::new(item_repository.clone()));
     let authentication_service = Arc::new(Service::new(
         configuration.clone(),
         json_web_token.clone(),
@@ -84,9 +89,12 @@ pub async fn run(configuration: Configuration, api_version: &Version) -> Running
         user_profile_repository,
         banned_user_list,
         room_repository,
+        shelf_repository,
         registration_service,
         ban_service,
         room_service,
+        shelf_service,
+        item_service,
     ));
     // Start API server
     let running_api = web::api::start(app_data, &net_ip, net_port, api_version).await;

@@ -20,8 +20,8 @@ impl BearerToken {
 
 #[async_trait]
 impl<S> FromRequestParts<S> for Extract
-where
-    S: Send + Sync,
+    where
+        S: Send + Sync,
 {
     type Rejection = Response;
 

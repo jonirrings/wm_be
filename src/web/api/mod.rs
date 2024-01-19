@@ -14,6 +14,7 @@ use crate::web::api;
 pub enum Version {
     V1,
 }
+
 /// The running API server.
 pub struct Running {
     /// The socket address the API server is listening on.
@@ -21,6 +22,7 @@ pub struct Running {
     /// The handle for the running API server.
     pub api_server: Option<JoinHandle<Result<(), std::io::Error>>>,
 }
+
 #[must_use]
 #[derive(Debug)]
 pub struct ServerStartedMessage {

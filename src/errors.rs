@@ -99,12 +99,24 @@ pub enum ServiceError {
 
     #[display(fmt = "Room not found")]
     RoomNotFound,
-    #[display(fmt = "Room Name not valid, length [4,20)")]
-    RoomNameNotValid,
-    #[display(fmt = "Room Description not valid, max length 200")]
-    RoomDescNotValid,
+    #[display(fmt = "Name not valid, length [4,20)")]
+    NameNotValid,
+    #[display(fmt = "Description not valid, max length 200")]
+    DescNotValid,
     #[display(fmt = "Payload content required")]
     PayloadNotValid,
+    #[display(fmt = "Shelf not found")]
+    ShelfNotFound,
+    #[display(fmt = "Item not found")]
+    ItemNotFound,
+    #[display(fmt = "Insufficient Item")]
+    InsufficientItem,
+    #[display(fmt = "Count must be positive")]
+    CountMustBePositive,
+    #[display(fmt = "Source must be positive")]
+    SourceMustBePositive,
+    #[display(fmt = "Target must be positive")]
+    TargetMustBePositive,
 }
 
 impl From<sqlx::Error> for ServiceError {
@@ -182,9 +194,15 @@ pub fn http_status_code_for_service_error(error: &ServiceError) -> StatusCode {
         ServiceError::WhitelistingError => StatusCode::INTERNAL_SERVER_ERROR,
         ServiceError::DatabaseError => StatusCode::INTERNAL_SERVER_ERROR,
         ServiceError::RoomNotFound => StatusCode::NOT_FOUND,
-        ServiceError::RoomNameNotValid => StatusCode::BAD_REQUEST,
-        ServiceError::RoomDescNotValid => StatusCode::BAD_REQUEST,
+        ServiceError::NameNotValid => StatusCode::BAD_REQUEST,
+        ServiceError::DescNotValid => StatusCode::BAD_REQUEST,
         ServiceError::PayloadNotValid => StatusCode::BAD_REQUEST,
+        ServiceError::ShelfNotFound => StatusCode::NOT_FOUND,
+        ServiceError::ItemNotFound => StatusCode::NOT_FOUND,
+        ServiceError::InsufficientItem => StatusCode::BAD_REQUEST,
+        ServiceError::CountMustBePositive => StatusCode::BAD_REQUEST,
+        ServiceError::SourceMustBePositive => StatusCode::BAD_REQUEST,
+        ServiceError::TargetMustBePositive => StatusCode::BAD_REQUEST,
     }
 }
 
@@ -199,5 +217,9 @@ pub fn map_database_error_to_service_error(error: &database::Error) -> ServiceEr
         database::Error::UserNotFound => ServiceError::UserNotFound,
         database::Error::UnrecognizedDatabaseDriver => ServiceError::InternalServerError,
         database::Error::RoomNotFound => ServiceError::RoomNotFound,
+        database::Error::ShelfNotFound => ServiceError::ShelfNotFound,
+        database::Error::ItemNotFound => ServiceError::ItemNotFound,
+        database::Error::InsufficientItem => ServiceError::InsufficientItem,
+        database::Error::CountMustBePositive => ServiceError::CountMustBePositive,
     }
 }

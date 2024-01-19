@@ -30,7 +30,7 @@ rust-version = "1.75"
 version = "0.1.0"
 
 [dependencies]
-argon2 = "0.5.2"
+argon2 = "0.5.3"
 #async-graphql = "7.0.0"
 async-trait = "0.1.77"
 axum = { version = "0.7.4", features = ["multipart", "http2", "ws", 'tracing'] }
@@ -62,7 +62,7 @@ tera = { version = "1", default-features = false }
 thiserror = "1.0.56"
 tokio = { version = "1", features = ["fs", "io-util", "macros", "net", "rt-multi-thread", "signal", "sync", "time"] }
 toml = "0.8.8"
-tower-http = { version = "0.5.1", features = ["compression-full", "cors", "timeout", "trace"] }
+tower-http = { version = "0.5.1", features = ["auth", "compression-full", "cors", "timeout", "trace"] }
 
 [dev-dependencies]
 rand = "0"

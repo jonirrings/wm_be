@@ -4,7 +4,9 @@ use serde::{Deserialize, Serialize};
 
 // use crate::databases::mysql::Mysql;
 use crate::databases::sqlite::Sqlite;
+use crate::models::item::{Item, ItemId, ItemInRoom, ItemOnShelf, ItemXShelf};
 use crate::models::room::{Room, RoomId};
+use crate::models::shelf::{Shelf, ShelfId};
 // use crate::databases::postgres::Postgres;
 use crate::models::user::{User, UserAuthentication, UserCompact, UserId, UserProfile};
 
@@ -36,6 +38,10 @@ pub enum Error {
     EmailTaken,
     UserNotFound,
     RoomNotFound,
+    ShelfNotFound,
+    ItemNotFound,
+    CountMustBePositive,
+    InsufficientItem,
 }
 
 /// Get the Driver of the Database from the Connection String
@@ -111,12 +117,33 @@ pub trait Database: Sync + Send {
     /// Get a `room` from `room_id`.
     async fn get_room_from_id(&self, room_id: RoomId) -> Result<Room, Error>;
     /// Get 'rooms' from criteria
-    async fn get_rooms(&self, offset: u64, limit: u8, sort: &Sorting) -> Result<Rooms, Error>;
+    async fn get_rooms(&self, offset: u64, limit: u8, sort: &Sorting) -> Result<Listing<Room>, Error>;
+    async fn insert_shelf_and_get_id(&self, name: &str, layer: i64, room_id: RoomId) -> Result<ShelfId, Error>;
+    async fn delete_shelf(&self, shelf_id: ShelfId) -> Result<(), Error>;
+    async fn update_shelf_name(&self, shelf_id: ShelfId, name: &str) -> Result<(), Error>;
+    async fn update_shelf_layer(&self, shelf_id: ShelfId, layer: i64) -> Result<(), Error>;
+    async fn update_shelf_room(&self, shelf_id: ShelfId, room_id: RoomId) -> Result<(), Error>;
+    async fn get_shelf_from_id(&self, shelf_id: ShelfId) -> Result<Shelf, Error>;
+    async fn get_shelves(&self, offset: u64, limit: u8, sort: &Sorting) -> Result<Listing<Shelf>, Error>;
+    async fn get_shelves_in_room(&self, offset: u64, limit: u8, sort: &Sorting, room_id: RoomId) -> Result<Listing<Shelf>, Error>;
+    async fn insert_item_and_get_id(&self, name: &str, sn: &str) -> Result<ItemId, Error>;
+    async fn insert_item_with_desc_and_get_id(&self, name: &str, desc: &str, sn: &str) -> Result<ItemId, Error>;
+    async fn delete_item(&self, item_id: ItemId) -> Result<(), Error>;
+    async fn update_item_name(&self, item_id: ItemId, name: &str) -> Result<(), Error>;
+    async fn update_item_desc(&self, item_id: ItemId, desc: &str) -> Result<(), Error>;
+    async fn update_item_sn(&self, item_id: ItemId, sn: &str) -> Result<(), Error>;
+    async fn get_item_from_id(&self, item_id: ItemId) -> Result<Item, Error>;
+    async fn get_items(&self, offset: u64, limit: u8, sort: &Sorting) -> Result<Listing<Item>, Error>;
+    async fn get_items_on_shelf(&self, offset: u64, limit: u8, sort: &Sorting, shelf_id: ShelfId) -> Result<Listing<ItemOnShelf>, Error>;
+    async fn get_items_in_room(&self, offset: u64, limit: u8, sort: &Sorting, room_id: RoomId) -> Result<Listing<ItemInRoom>, Error>;
+    async fn transfer_items(&self, item_id: ItemId, count: i64, shelf_from: ShelfId, shelf_to: ShelfId) -> Result<(), Error>;
+    async fn withdraw_items(&self, item_id: ItemId, count: i64, shelf_id: ShelfId) -> Result<(), Error>;
+    async fn deposit_items(&self, item_id: ItemId, count: i64, shelf_id: ShelfId) -> Result<(), Error>;
+    async fn convert_items(&self, from: Vec<ItemXShelf>, into: Vec<ItemXShelf>, ) -> Result<(), Error>;
 }
-
 #[allow(clippy::module_name_repetitions)]
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Rooms{
+pub struct Listing<T>{
     pub total: u64,
-    pub data: Vec<Room>
+    pub data: Vec<T>,
 }

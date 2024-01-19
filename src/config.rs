@@ -8,6 +8,8 @@ use serde_derive::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::sync::RwLock;
 use located_error::{Located, LocatedError};
+use crate::common::{ListingCriteria, ListingSpec};
+use crate::databases::database::Sorting;
 
 #[derive(Debug, Default, Clone)]
 pub struct Info {
@@ -373,7 +375,27 @@ impl Configuration {
 
         settings_lock.net.base_url.clone()
     }
+    pub async fn spec_from_criteria(&self, request: &ListingCriteria) -> ListingSpec {
+        let settings = self.settings.read().await;
+        let default_page_size = settings.api.default_page_size;
+        let max_page_size = settings.api.max_page_size;
+        drop(settings);
+        let sort = request.sort.unwrap_or(Sorting::IdAsc);
+        let offset = request.offset.unwrap_or(0);
+        let limit = request.limit.unwrap_or(default_page_size);
+        let limit = if limit > max_page_size {
+            max_page_size
+        } else {
+            limit
+        };
+        ListingSpec {
+            offset,
+            limit,
+            sort,
+        }
+    }
 }
+
 /// The public index configuration.
 /// There is an endpoint to get this configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,49 +1,24 @@
 use std::sync::Arc;
 
-use serde_derive::{Deserialize, Serialize};
-
-use crate::config::Configuration;
+use crate::common::{ ListingSpec};
 use crate::errors::ServiceError;
-use crate::databases::database::{Database, Error, Rooms, Sorting};
+use crate::databases::database::{Database, Error, Listing};
 use crate::models::room::{Room, RoomId};
-use crate::models::user::UserId;
 use crate::web::api::v1::contexts::room::forms::AddRoomForm;
 
 pub struct Service {
-    configuration: Arc<Configuration>,
     room_repository: Arc<DbRoomRepository>,
-}
-
-/// User request to generate a listing.
-#[derive(Debug, Deserialize)]
-pub struct ListingRequest {
-    pub offset: Option<u64>,
-    pub limit: Option<u8>,
-    pub sort: Option<Sorting>,
-}
-
-/// Internal specification for a listings.
-#[derive(Debug, Deserialize)]
-pub struct ListingSpecification {
-    pub offset: u64,
-    pub limit: u8,
-    pub sort: Sorting,
 }
 
 impl Service {
     #[must_use]
-    pub fn new(
-        configuration: Arc<Configuration>, room_repository: Arc<DbRoomRepository>) -> Self {
-        Self { configuration, room_repository }
+    pub fn new(room_repository: Arc<DbRoomRepository>) -> Self {
+        Self { room_repository }
     }
     pub async fn add_room(&self, registration_form: &AddRoomForm/*, opt_user_id: Option<UserId>*/) -> Result<RoomId, ServiceError> {
-        //fixme: check the user permission
-        /*if opt_user_id.is_none() {
-            return Err(ServiceError::Unauthorized)
-        }*/
         if let Some(desc) = &registration_form.description {
             if desc.len() > 200 {
-                return Err(ServiceError::RoomDescNotValid);
+                return Err(ServiceError::DescNotValid);
             }
             return self.room_repository.add_with_desc(&registration_form.name, desc).await.map_err(|_| ServiceError::InternalServerError);
         }
@@ -68,38 +43,10 @@ impl Service {
         })
     }
     pub async fn get_room(&self, room_id: &RoomId/*, opt_user_id: Option<UserId>*/) -> Result<Room, ServiceError> {
-        //fixme: check the user permission
-        /*if opt_user_id.is_none() {
-            return Err(ServiceError::Unauthorized)
-        }*/
         self.room_repository.get_one(room_id).await.map_err(|_| ServiceError::RoomNotFound)
     }
-    pub async fn get_rooms(&self, request: &ListingRequest) -> Result<Rooms, ServiceError> {
-        //fixme: check the user permission
-        /*if opt_user_id.is_none() {
-            return Err(ServiceError::Unauthorized)
-        }*/
-        let spec = self.spec_from_request(request).await;
+    pub async fn get_rooms(&self, spec: &ListingSpec) -> Result<Listing<Room>, ServiceError> {
         self.room_repository.get_many(&spec).await.map_err(|_| ServiceError::RoomNotFound)
-    }
-    async fn spec_from_request(&self, request: &ListingRequest) -> ListingSpecification {
-        let settings = self.configuration.settings.read().await;
-        let default_page_size = settings.api.default_page_size;
-        let max_page_size = settings.api.max_page_size;
-        drop(settings);
-        let sort = request.sort.unwrap_or(Sorting::IdAsc);
-        let offset = request.offset.unwrap_or(0);
-        let limit = request.limit.unwrap_or(default_page_size);
-        let limit = if limit > max_page_size {
-            max_page_size
-        } else {
-            limit
-        };
-        ListingSpecification {
-            offset,
-            limit,
-            sort,
-        }
     }
 }
 
@@ -130,7 +77,7 @@ impl DbRoomRepository {
     pub async fn get_one(&self, room_id: &RoomId) -> Result<Room, Error> {
         self.database.get_room_from_id(*room_id).await
     }
-    pub async fn get_many(&self, spec: &ListingSpecification) -> Result<Rooms, Error> {
+    pub async fn get_many(&self, spec: &ListingSpec) -> Result<Listing<Room>, Error> {
         self.database.get_rooms(spec.offset, spec.limit, &spec.sort).await
     }
 }

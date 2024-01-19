@@ -1,13 +1,16 @@
 use serde_derive::{Deserialize, Serialize};
+use crate::models::room::RoomId;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct AddRoomForm {
+pub struct AddShelfForm {
     pub name: String,
-    pub description: Option<String>,
+    pub layer: i64,
+    pub room_id: RoomId,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct UpdateRoomForm {
+pub struct UpdateShelfForm {
     pub name: Option<String>,
-    pub description: Option<String>,
+    pub layer: Option<i64>,
+    pub room_id: Option<RoomId>,
 }

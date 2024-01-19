@@ -6,10 +6,12 @@ use serde_json::json;
 
 use crate::databases::database;
 use crate::errors::{http_status_code_for_service_error, map_database_error_to_service_error, ServiceError};
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct OkResponseData<T> {
     pub data: T,
 }
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ErrorResponseData {
     pub error: String,

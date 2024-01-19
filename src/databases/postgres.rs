@@ -3,14 +3,15 @@ use std::time::Duration;
 
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
-use sqlx::postgres::{PgConnectOptions,PgPoolOptions};
+use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 use sqlx::{query, query_as, Acquire, ConnectOptions, PgPool};
 
-use crate::databases::database::{ Database, Driver, Sorting};
+use crate::databases::database::{Database, Driver, Sorting};
 
 pub struct Postgres {
     pub pool: PgPool,
 }
+
 #[async_trait]
 impl Database for Postgres {
     fn get_database_driver(&self) -> Driver {
@@ -27,7 +28,7 @@ impl Database for Postgres {
             .await
             .expect("Unable to create database pool.");
 
-        sqlx::migrate!("migrations/mysql")
+        sqlx::migrate!("migrations/postgres")
             .run(&db)
             .await
             .expect("Could not run database migrations.");
