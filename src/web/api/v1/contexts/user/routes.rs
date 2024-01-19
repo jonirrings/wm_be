@@ -8,12 +8,12 @@ use super::handlers::{
 };
 use crate::common::AppData;
 
-pub fn router(app_data: Arc<AppData>) -> Router {
+pub fn router() -> Router {
     Router::new()
-        .route("/register", post(registration_handler).with_state(app_data.clone()))
-        .route("/email/verify/:token", get(email_verification_handler).with_state(app_data.clone()))
-        .route("/login", post(login_handler).with_state(app_data.clone()))
-        .route("/token/verify", post(verify_token_handler).with_state(app_data.clone()))
-        .route("/token/renew", post(renew_token_handler).with_state(app_data.clone()))
-        .route("/ban/:user", delete(ban_handler).with_state(app_data))
+        .route("/register", post(registration_handler))
+        .route("/email/verify/:token", get(email_verification_handler))
+        .route("/login", post(login_handler))
+        .route("/token/verify", post(verify_token_handler))
+        .route("/token/renew", post(renew_token_handler))
+        .route("/ban/:user", delete(ban_handler))
 }

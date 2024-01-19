@@ -1,7 +1,7 @@
 use std::str::FromStr;
 use std::sync::Arc;
 
-use axum::extract::{self, Multipart, Path, Query, State};
+use axum::extract::{self, Multipart, Path, Query, Extension};
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::Json;
 use serde::Deserialize;
@@ -20,9 +20,9 @@ use crate::web::api::v1::responses::OkResponseData;
 
 #[allow(clippy::unused_async)]
 pub async fn add_handler(
-    State(app_data): State<Arc<AppData>>,
+    Extension(app_data): Extension<Arc<AppData>>,
     Extract(maybe_bearer_token): Extract,
-    extract::Json(room_form): extract::Json<AddRoomForm>,
+    Json(room_form): Json<AddRoomForm>,
 ) -> Response {
     /* let opt_user_id = match get_optional_logged_in_user(maybe_bearer_token, app_data.clone()).await {
          Ok(opt_user_id) => opt_user_id,
@@ -36,7 +36,7 @@ pub async fn add_handler(
 
 
 #[allow(clippy::unused_async)]
-pub async fn delete_handler(State(app_data): State<Arc<AppData>>,
+pub async fn delete_handler(Extension(app_data): Extension<Arc<AppData>>,
                             Extract(maybe_bearer_token): Extract,
                             Path(room_id): Path<RoomId>, ) -> Response {
     match app_data.room_service.close_room(&room_id).await {
@@ -46,10 +46,10 @@ pub async fn delete_handler(State(app_data): State<Arc<AppData>>,
 }
 
 #[allow(clippy::unused_async)]
-pub async fn update_handler(State(app_data): State<Arc<AppData>>,
+pub async fn update_handler(Extension(app_data): Extension<Arc<AppData>>,
                             Extract(maybe_bearer_token): Extract,
                             Path(room_id): Path<RoomId>,
-                            extract::Json(room_form): extract::Json<UpdateRoomForm>, ) -> Response {
+                            Json(room_form): Json<UpdateRoomForm>, ) -> Response {
     if let Some(name) = &room_form.name{
         return match app_data.room_service.update_room_name(&room_id,&name).await {
             Ok(_) => responses::mutated_room(room_id).into_response(),
@@ -67,7 +67,7 @@ pub async fn update_handler(State(app_data): State<Arc<AppData>>,
 
 #[allow(clippy::unused_async)]
 pub async fn get_handler(
-    State(app_data): State<Arc<AppData>>,
+    Extension(app_data): Extension<Arc<AppData>>,
     Extract(maybe_bearer_token): Extract,
     Path(room_id): Path<RoomId>,
 ) -> Response {
@@ -82,7 +82,7 @@ pub async fn get_handler(
 }
 
 #[allow(clippy::unused_async)]
-pub async fn get_all_handler(State(app_data): State<Arc<AppData>>,
+pub async fn get_all_handler(Extension(app_data): Extension<Arc<AppData>>,
                              Extract(maybe_bearer_token): Extract,
                              Query(criteria): Query<ListingRequest>,) -> Response{
     match app_data.room_service.get_rooms(&criteria).await {
