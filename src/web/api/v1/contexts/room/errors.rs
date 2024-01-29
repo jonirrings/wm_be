@@ -18,7 +18,7 @@ impl IntoResponse for Request {
     fn into_response(self) -> Response {
         json_error_response(
             http_status_code_for_handler_error(&self),
-            &ErrorResponseData { error: self.to_string() },
+            &ErrorResponseData { message: self.to_string() },
         )
     }
 }

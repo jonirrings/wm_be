@@ -12,6 +12,6 @@ use crate::common::AppData;
 /// Routes for the [`about`](crate::web::api::v1::contexts::about) API context.
 pub fn router() -> Router {
     Router::new()
-        .route("/", get(about_page_handler))
+        .route("/about", get(about_page_handler))
         .route("/license", get(license_page_handler))
 }

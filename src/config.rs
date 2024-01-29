@@ -93,6 +93,7 @@ pub const FREE_PORT: u16 = 0;
 /// The the base URL for the API.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Network {
+    pub ip: Option<String>,
     /// The port to listen on. Default to `3001`.
     pub port: u16,
     /// The base URL for the API. For example: `http://localhost`.
@@ -103,6 +104,7 @@ pub struct Network {
 impl Default for Network {
     fn default() -> Self {
         Self {
+            ip: None,
             port: 6001,
             base_url: None,
         }

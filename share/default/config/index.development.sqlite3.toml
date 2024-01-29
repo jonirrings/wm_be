@@ -4,6 +4,7 @@ log_level = "info"
 name = "Warehouse Management Development"
 
 [net]
+ip = "127.0.0.1"
 port = 6001
 
 [auth]

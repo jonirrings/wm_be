@@ -161,7 +161,6 @@ impl From<serde_json::Error> for ServiceError {
     }
 }
 
-
 #[must_use]
 pub fn http_status_code_for_service_error(error: &ServiceError) -> StatusCode {
     #[allow(clippy::match_same_arms)]
@@ -169,7 +168,7 @@ pub fn http_status_code_for_service_error(error: &ServiceError) -> StatusCode {
         ServiceError::ClosedForRegistration => StatusCode::FORBIDDEN,
         ServiceError::EmailInvalid => StatusCode::BAD_REQUEST,
         ServiceError::NotAUrl => StatusCode::BAD_REQUEST,
-        ServiceError::WrongPasswordOrUsername => StatusCode::FORBIDDEN,
+        ServiceError::WrongPasswordOrUsername => StatusCode::EXPECTATION_FAILED,
         ServiceError::UsernameNotFound => StatusCode::NOT_FOUND,
         ServiceError::UserNotFound => StatusCode::NOT_FOUND,
         ServiceError::AccountNotFound => StatusCode::NOT_FOUND,

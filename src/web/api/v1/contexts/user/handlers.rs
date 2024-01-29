@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use axum::extract::{self, Host, Path, Extension};
+use axum::extract::{self, Extension, Host, Path};
 use axum::response::{IntoResponse, Response};
 use axum::Json;
 use serde::Deserialize;
@@ -63,16 +63,31 @@ pub async fn email_verification_handler(Extension(app_data): Extension<Arc<AppDa
 /// - Unable to verify the supplied payload as a valid JWT.
 /// - The JWT is not invalid or expired.
 #[allow(clippy::unused_async)]
-pub async fn login_handler(
-    Extension(app_data): Extension<Arc<AppData>>,
-    Json(login_form): Json<LoginForm>,
-) -> Response {
+pub async fn login_handler(Extension(app_data): Extension<Arc<AppData>>, Json(login_form): Json<LoginForm>) -> Response {
     match app_data
         .authentication_service
         .login(&login_form.username, &login_form.password)
         .await
     {
         Ok((token, user_compact)) => responses::logged_in_user(token, user_compact).into_response(),
+        Err(error) => error.into_response(),
+    }
+}
+/// Who am I
+///
+/// # Errors
+///
+/// It returns an error if:
+///
+/// - Unable to verify the JWT
+#[allow(clippy::unused_async)]
+pub async fn who_am_i_handler(Extension(app_data): Extension<Arc<AppData>>, Extract(maybe_bearer_token): Extract) -> Response {
+    let user_id = match app_data.auth.get_user_id_from_bearer_token(&maybe_bearer_token).await {
+        Ok(user_id) => user_id,
+        Err(error) => return error.into_response(),
+    };
+    match app_data.registration_service.get_user_by_id(user_id).await {
+        Ok(u) => Json(OkResponseData { data: u }).into_response(),
         Err(error) => error.into_response(),
     }
 }
@@ -86,15 +101,12 @@ pub async fn login_handler(
 /// - Unable to verify the supplied payload as a valid JWT.
 /// - The JWT is not invalid or expired.
 #[allow(clippy::unused_async)]
-pub async fn verify_token_handler(
-    Extension(app_data): Extension<Arc<AppData>>,
-    Json(token): Json<JsonWebToken>,
-) -> Response {
+pub async fn verify_token_handler(Extension(app_data): Extension<Arc<AppData>>, Json(token): Json<JsonWebToken>) -> Response {
     match app_data.json_web_token.verify(&token.token).await {
         Ok(_) => Json(OkResponseData {
             data: "Token is valid.".to_string(),
         })
-            .into_response(),
+        .into_response(),
         Err(error) => error.into_response(),
     }
 }
@@ -111,10 +123,7 @@ pub struct UsernameParam(pub String);
 /// - Unable to parse the supplied payload as a valid JWT.
 /// - The JWT is not invalid or expired.
 #[allow(clippy::unused_async)]
-pub async fn renew_token_handler(
-    Extension(app_data): Extension<Arc<AppData>>,
-    Json(token): Json<JsonWebToken>,
-) -> Response {
+pub async fn renew_token_handler(Extension(app_data): Extension<Arc<AppData>>, Json(token): Json<JsonWebToken>) -> Response {
     match app_data.authentication_service.renew_token(&token.token).await {
         Ok((token, user_compact)) => responses::renewed_token(token, user_compact).into_response(),
         Err(error) => error.into_response(),
@@ -146,7 +155,7 @@ pub async fn ban_handler(
         Ok(()) => Json(OkResponseData {
             data: format!("Banned user: {}", to_be_banned_username.0),
         })
-            .into_response(),
+        .into_response(),
         Err(error) => error.into_response(),
     }
 }

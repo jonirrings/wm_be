@@ -180,6 +180,13 @@ impl RegistrationService {
 
         Ok(true)
     }
+
+    pub async fn get_user_by_id(&self, user_id: UserId) -> Result<UserProfile, ServiceError> {
+        self.user_profile_repository
+            .get_user_profile_from_id(user_id)
+            .await
+            .map_err(|_| ServiceError::UserNotFound)
+    }
 }
 
 pub struct BanService {
@@ -238,7 +245,9 @@ pub struct DbUserRepository {
 
 impl DbUserRepository {
     #[must_use]
-    pub fn new(database: Arc<Box<dyn Database>>) -> Self { Self { database } }
+    pub fn new(database: Arc<Box<dyn Database>>) -> Self {
+        Self { database }
+    }
     /// It returns the compact user.
     ///
     /// # Errors
@@ -306,6 +315,10 @@ impl DbUserProfileRepository {
     /// It returns an error if there is a database error.
     pub async fn get_user_profile_from_username(&self, username: &str) -> Result<UserProfile, Error> {
         self.database.get_user_profile_from_username(username).await
+    }
+
+    pub async fn get_user_profile_from_id(&self, user_id: UserId) -> Result<UserProfile, Error> {
+        self.database.get_user_profile_from_id(user_id).await
     }
 }
 

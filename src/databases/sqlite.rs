@@ -8,7 +8,7 @@ use chrono::NaiveDateTime;
 use futures::TryFutureExt;
 use log::{debug, info};
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
-use sqlx::{query, query_as, Acquire, ConnectOptions, SqlitePool, Executor};
+use sqlx::{query, query_as, Acquire, ConnectOptions, Executor, SqlitePool};
 
 use crate::databases::database::{self, Database, Driver, Error, Listing, Sorting};
 use crate::models::item::{Item, ItemId, ItemInRoom, ItemOnShelf, ItemXShelf};
@@ -19,7 +19,6 @@ use crate::models::user::{User, UserAuthentication, UserCompact, UserId, UserPro
 pub struct Sqlite {
     pub pool: SqlitePool,
 }
-
 
 //fixme foreign key error
 #[async_trait]
@@ -53,10 +52,19 @@ impl Database for Sqlite {
         let mut tx = conn.begin().await.map_err(|_| Error::Error)?;
         // create the user account and get the user id
         let sql = "INSERT INTO users (created_at) VALUES (strftime('%Y-%m-%d %H:%M:%S',DATETIME('now', 'utc')))";
-        let user_id = query(sql).execute(&mut *tx).await.map(|v| v.last_insert_rowid()).map_err(|_| Error::Error)?;
+        let user_id = query(sql)
+            .execute(&mut *tx)
+            .await
+            .map(|v| v.last_insert_rowid())
+            .map_err(|_| Error::Error)?;
         // add password hash for account
         let sql = "INSERT INTO user_authentication (user_id, password_hash) VALUES (?, ?)";
-        let insert_user_auth_result = query(sql).bind(user_id).bind(password_hash).execute(&mut *tx).await.map_err(|_| Error::Error);
+        let insert_user_auth_result = query(sql)
+            .bind(user_id)
+            .bind(password_hash)
+            .execute(&mut *tx)
+            .await
+            .map_err(|_| Error::Error);
         // rollback transaction on error
         if let Err(e) = insert_user_auth_result {
             drop(tx.rollback().await);
@@ -80,7 +88,7 @@ impl Database for Sqlite {
                         Error::Error
                     }
                 }
-                _ => Error::Error
+                _ => Error::Error,
             });
         // commit or rollback transaction and return user_id on success
         match insert_user_profile_result {
@@ -119,6 +127,14 @@ impl Database for Sqlite {
             .await
             .map_err(|_| Error::UserNotFound)
     }
+    async fn get_user_profile_from_id(&self, user_id: UserId) -> Result<UserProfile, Error> {
+        let sql = "SELECT * FROM user_profiles WHERE user_id = ?";
+        query_as::<_, UserProfile>(sql)
+            .bind(user_id)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|_| Error::UserNotFound)
+    }
     async fn get_user_compact_from_id(&self, user_id: UserId) -> Result<UserCompact, Error> {
         let sql = "SELECT tu.user_id, tp.username, tu.administrator FROM users tu INNER JOIN user_profiles tp ON tu.user_id = tp.user_id WHERE tu.user_id = ?";
         query_as::<_, UserCompact>(sql)
@@ -132,7 +148,7 @@ impl Database for Sqlite {
         query_as(sql)
             .fetch_one(&self.pool)
             .await
-            .map(|(v, )| v)
+            .map(|(v,)| v)
             .map_err(|_| Error::Error)
     }
     async fn ban_user(&self, user_id: i64, reason: &str, date_expiry: NaiveDateTime) -> Result<(), Error> {
@@ -266,7 +282,7 @@ impl Database for Sqlite {
         let count_result: Result<i64, Error> = query_as(sql)
             .fetch_one(&self.pool)
             .await
-            .map(|(v, )| v)
+            .map(|(v,)| v)
             .map_err(|_| Error::Error);
         let count = count_result?;
         let sort_query: String = match sort {
@@ -296,12 +312,10 @@ impl Database for Sqlite {
             .execute(&self.pool)
             .await
             .map(|v| v.last_insert_rowid())
-            .map_err(|err|
-                match err {
-                    sqlx::Error::PoolClosed => Error::Error,
-                    _ => Error::Error
-                }
-            )
+            .map_err(|err| match err {
+                sqlx::Error::PoolClosed => Error::Error,
+                _ => Error::Error,
+            })
     }
     async fn delete_shelf(&self, shelf_id: ShelfId) -> Result<(), Error> {
         let sql = "DELETE FROM shelf WHERE shelf_id = ?";
@@ -379,7 +393,7 @@ impl Database for Sqlite {
         let count_result: Result<i64, Error> = query_as(sql)
             .fetch_one(&self.pool)
             .await
-            .map(|(v, )| v)
+            .map(|(v,)| v)
             .map_err(|_| Error::Error);
         let count = count_result?;
         let sort_query: String = match sort {
@@ -400,13 +414,19 @@ impl Database for Sqlite {
             data: shelves,
         })
     }
-    async fn get_shelves_in_room(&self, offset: u64, limit: u8, sort: &Sorting, room_id: RoomId) -> Result<Listing<Shelf>, Error> {
+    async fn get_shelves_in_room(
+        &self,
+        offset: u64,
+        limit: u8,
+        sort: &Sorting,
+        room_id: RoomId,
+    ) -> Result<Listing<Shelf>, Error> {
         let sql = "SELECT COUNT(*) as count FROM shelf WHERE room_id = ?";
         let count_result: Result<i64, Error> = query_as(sql)
             .bind(room_id)
             .fetch_one(&self.pool)
             .await
-            .map(|(v, )| v)
+            .map(|(v,)| v)
             .map_err(|_| Error::Error);
         let count = count_result?;
         let sort_query: String = match sort {
@@ -438,9 +458,10 @@ impl Database for Sqlite {
             .map_err(|_| Error::Error)
     }
     async fn insert_item_with_desc_and_get_id(&self, name: &str, desc: &str, sn: &str) -> Result<ItemId, Error> {
-        let sql = "INSERT INTO items (name, description) VALUES (?, ?)";
+        let sql = "INSERT INTO items (name, sn, description) VALUES (?, ?, ?)";
         query(sql)
             .bind(name)
+            .bind(sn)
             .bind(desc)
             .execute(&self.pool)
             .await
@@ -448,7 +469,7 @@ impl Database for Sqlite {
             .map_err(|_| Error::Error)
     }
     async fn delete_item(&self, item_id: ItemId) -> Result<(), Error> {
-        let sql = "DELETE FROM items WHERE room_id = ?";
+        let sql = "DELETE FROM items WHERE item_id = ?";
         query(sql)
             .bind(item_id)
             .execute(&self.pool)
@@ -523,7 +544,7 @@ impl Database for Sqlite {
         let count_result: Result<i64, Error> = query_as(sql)
             .fetch_one(&self.pool)
             .await
-            .map(|(v, )| v)
+            .map(|(v,)| v)
             .map_err(|_| Error::Error);
         let count = count_result?;
         let sort_query: String = match sort {
@@ -544,7 +565,13 @@ impl Database for Sqlite {
             data: items,
         })
     }
-    async fn get_items_on_shelf(&self, offset: u64, limit: u8, sort: &Sorting, shelf_id: ShelfId) -> Result<Listing<ItemOnShelf>, Error> {
+    async fn get_items_on_shelf(
+        &self,
+        offset: u64,
+        limit: u8,
+        sort: &Sorting,
+        shelf_id: ShelfId,
+    ) -> Result<Listing<ItemOnShelf>, Error> {
         let sql = "SELECT COUNT(*) as count
 FROM shelf_items si
          JOIN items it ON it.item_id = si.item_id
@@ -554,7 +581,7 @@ WHERE si.shelf_id = ?";
             .bind(shelf_id)
             .fetch_one(&self.pool)
             .await
-            .map(|(v, )| v)
+            .map(|(v,)| v)
             .map_err(|_| Error::Error);
         let count = count_result?;
         let sql = "SELECT si.item_id  item_id,
@@ -579,7 +606,13 @@ WHERE si.shelf_id =  ? LIMIT ?, ?";
             data: items,
         })
     }
-    async fn get_items_in_room(&self, offset: u64, limit: u8, sort: &Sorting, room_id: RoomId) -> Result<Listing<ItemInRoom>, Error> {
+    async fn get_items_in_room(
+        &self,
+        offset: u64,
+        limit: u8,
+        sort: &Sorting,
+        room_id: RoomId,
+    ) -> Result<Listing<ItemInRoom>, Error> {
         let sql = "SELECT COUNT(*) count
 FROM (SELECT SUM(si.count) inner_count
       FROM shelf_items si
@@ -591,7 +624,7 @@ FROM (SELECT SUM(si.count) inner_count
         let count_result: Result<i64, Error> = query_as(sql)
             .fetch_one(&self.pool)
             .await
-            .map(|(v, )| v)
+            .map(|(v,)| v)
             .map_err(|_| Error::Error);
         let count = count_result?;
         let sql = "SELECT it.item_id, it.name item_name,SUM(si.count) count, r.room_id, r.name room_name
@@ -638,11 +671,7 @@ WHERE r.room_id = ? GROUP BY it.item_id LIMIT ?, ?";
             .execute(&mut *tx)
             .await
             .map_err(|_| Error::Error)
-            .and_then(|v| if v.rows_affected() > 0 {
-                Ok(())
-            } else {
-                Err(Error::Error)
-            });
+            .and_then(|v| if v.rows_affected() > 0 { Ok(()) } else { Err(Error::Error) });
         if update_res.is_err() {
             drop(tx.rollback().await);
             return update_res;
@@ -660,11 +689,7 @@ WHERE r.room_id = ? GROUP BY it.item_id LIMIT ?, ?";
                 .execute(&mut *tx)
                 .await
                 .map_err(|_| Error::Error)
-                .and_then(|v| if v.rows_affected() > 0 {
-                    Ok(())
-                } else {
-                    Err(Error::Error)
-                });
+                .and_then(|v| if v.rows_affected() > 0 { Ok(()) } else { Err(Error::Error) });
             match update_res {
                 Ok(_) => {
                     drop(tx.commit().await);
@@ -684,11 +709,7 @@ WHERE r.room_id = ? GROUP BY it.item_id LIMIT ?, ?";
                 .execute(&mut *tx)
                 .await
                 .map_err(|_| Error::Error)
-                .and_then(|v| if v.rows_affected() > 0 {
-                    Ok(())
-                } else {
-                    Err(Error::Error)
-                });
+                .and_then(|v| if v.rows_affected() > 0 { Ok(()) } else { Err(Error::Error) });
             match insert_result {
                 Ok(_) => {
                     drop(tx.commit().await);
@@ -728,11 +749,7 @@ WHERE r.room_id = ? GROUP BY it.item_id LIMIT ?, ?";
             .execute(&mut *tx)
             .await
             .map_err(|_| Error::Error)
-            .and_then(|v| if v.rows_affected() > 0 {
-                Ok(())
-            } else {
-                Err(Error::Error)
-            });
+            .and_then(|v| if v.rows_affected() > 0 { Ok(()) } else { Err(Error::Error) });
         match upsert_result {
             Ok(_) => {
                 drop(tx.commit().await);
@@ -770,11 +787,7 @@ WHERE r.room_id = ? GROUP BY it.item_id LIMIT ?, ?";
             .execute(&mut *tx)
             .await
             .map_err(|_| Error::Error)
-            .and_then(|v| if v.rows_affected() > 0 {
-                Ok(())
-            } else {
-                Err(Error::Error)
-            });
+            .and_then(|v| if v.rows_affected() > 0 { Ok(()) } else { Err(Error::Error) });
         match update_result {
             Ok(_) => {
                 drop(tx.commit().await);
@@ -822,11 +835,7 @@ WHERE r.room_id = ? GROUP BY it.item_id LIMIT ?, ?";
                 .execute(&mut *tx)
                 .await
                 .map_err(|_| Error::Error)
-                .and_then(|v| if v.rows_affected() > 0 {
-                    Ok(())
-                } else {
-                    Err(Error::Error)
-                });
+                .and_then(|v| if v.rows_affected() > 0 { Ok(()) } else { Err(Error::Error) });
             if let Err(err) = update_result {
                 drop(tx.rollback().await);
                 return Err(err);
@@ -858,11 +867,7 @@ WHERE r.room_id = ? GROUP BY it.item_id LIMIT ?, ?";
                 .execute(&mut *tx)
                 .await
                 .map_err(|_| Error::Error)
-                .and_then(|v| if v.rows_affected() > 0 {
-                    Ok(())
-                } else {
-                    Err(Error::Error)
-                });
+                .and_then(|v| if v.rows_affected() > 0 { Ok(()) } else { Err(Error::Error) });
             if let Err(err) = upsert_result {
                 drop(tx.rollback().await);
                 return Err(err);

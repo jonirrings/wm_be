@@ -6,7 +6,7 @@ use crate::services::authentication::{DbUserAuthenticationRepository, JsonWebTok
 use crate::services::user::{self, DbBannedUserList, DbUserProfileRepository, DbUserRepository};
 use crate::services::room::{self, DbRoomRepository};
 use crate::services::shelf::{self, DbShelfRepository};
-use crate::services::item::{self, DbItemRepository};
+use crate::services::item;
 use crate::web::api::v1::auth::Authentication;
 use crate::mailer;
 use crate::models::room::RoomId;
@@ -76,7 +76,7 @@ impl AppData {
             ban_service,
             room_service,
             shelf_service,
-            item_service
+            item_service,
         }
     }
 }
@@ -88,13 +88,15 @@ pub struct ListingCriteria {
     pub limit: Option<u8>,
     pub sort: Option<Sorting>,
 }
+
 #[derive(Debug, Deserialize)]
-pub struct ExtraRoomId{
-    pub room_id:Option<RoomId>
+pub struct ExtraRoomId {
+    pub room_id: Option<RoomId>,
 }
+
 #[derive(Debug, Deserialize)]
-pub struct ExtraShelfId{
-    pub shelf_id:Option<ShelfId>
+pub struct ExtraShelfId {
+    pub shelf_id: Option<ShelfId>,
 }
 
 /// Internal specification for a listings.

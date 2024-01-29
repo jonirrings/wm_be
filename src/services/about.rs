@@ -8,8 +8,7 @@ pub fn index_page() -> String {
 
 #[must_use]
 pub fn page() -> String {
-    format!(
-        r#"
+    r#"
     <html>
         <head>
             <title>About</title>
@@ -22,17 +21,15 @@ pub fn page() -> String {
             <p>Hi! This is a running Warehouse Management.</p>
         </body>
         <footer style="padding: 1.25em 0;border-top: dotted 1px;">
-            <a href="/{API_VERSION_URL_PREFIX}/about/license">license</a>
+            <a href="/info/license">license</a>
         </footer>
     </html>
-"#
-    )
+"#.to_string()
 }
 
 #[must_use]
 pub fn license_page() -> String {
-    format!(
-        r#"
+    r#"
     <html>
         <head>
             <title>Licensing</title>
@@ -46,9 +43,8 @@ pub fn license_page() -> String {
 
         </body>
         <footer style="padding: 1.25em 0;border-top: dotted 1px;">
-            <a href="/{API_VERSION_URL_PREFIX}/about">about</a>
+            <a href="/info/about">about</a>
         </footer>
     </html>
-"#
-    )
+"#.to_string()
 }

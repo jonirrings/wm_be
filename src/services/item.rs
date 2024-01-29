@@ -1,10 +1,10 @@
-use std::sync::Arc;
+use crate::common::ListingSpec;
 use crate::databases::database::{Database, Error, Listing};
 use crate::errors::ServiceError;
-use crate::common::{ListingSpec};
 use crate::models::item::{Item, ItemId, ItemInRoom, ItemOnShelf, ItemXShelf};
 use crate::models::room::RoomId;
 use crate::models::shelf::ShelfId;
+use std::sync::Arc;
 
 pub struct Service {
     item_repository: Arc<DbItemRepository>,
@@ -16,52 +16,85 @@ impl Service {
         Self { item_repository }
     }
     pub async fn add_item(&self, name: &str, sn: &str) -> Result<ItemId, ServiceError> {
-        self.item_repository.add(name, sn).await.map_err(|_| ServiceError::InternalServerError)
+        self.item_repository
+            .add(name, sn)
+            .await
+            .map_err(|_| ServiceError::InternalServerError)
     }
     pub async fn add_item_with_desc(&self, name: &str, desc: &str, sn: &str) -> Result<ItemId, ServiceError> {
-        self.item_repository.add_with_desc(name, desc, sn).await.map_err(|_| ServiceError::InternalServerError)
+        self.item_repository
+            .add_with_desc(name, desc, sn)
+            .await
+            .map_err(|_| ServiceError::InternalServerError)
     }
     pub async fn remove_item(&self, item_id: &ItemId) -> Result<(), ServiceError> {
-        self.item_repository.delete(&item_id).await.map_err(|error: Error| match error {
-            Error::ItemNotFound => ServiceError::ItemNotFound,
-            _ => ServiceError::InternalServerError
-        })
+        self.item_repository
+            .delete(item_id)
+            .await
+            .map_err(|error: Error| match error {
+                Error::ItemNotFound => ServiceError::ItemNotFound,
+                _ => ServiceError::InternalServerError,
+            })
     }
     pub async fn update_item_name(&self, item_id: &ItemId, name: &str) -> Result<(), ServiceError> {
-        self.item_repository.update_name(&item_id, &name).await.map_err(|error: Error| match error {
-            Error::ItemNotFound => ServiceError::ItemNotFound,
-            _ => ServiceError::InternalServerError
-        })
+        self.item_repository
+            .update_name(&item_id, &name)
+            .await
+            .map_err(|error: Error| match error {
+                Error::ItemNotFound => ServiceError::ItemNotFound,
+                _ => ServiceError::InternalServerError,
+            })
     }
     pub async fn update_item_desc(&self, item_id: &ItemId, desc: &str) -> Result<(), ServiceError> {
-        self.item_repository.update_desc(&item_id, &desc).await.map_err(|error: Error| match error {
-            Error::ItemNotFound => ServiceError::ItemNotFound,
-            _ => ServiceError::InternalServerError
-        })
+        self.item_repository
+            .update_desc(&item_id, &desc)
+            .await
+            .map_err(|error: Error| match error {
+                Error::ItemNotFound => ServiceError::ItemNotFound,
+                _ => ServiceError::InternalServerError,
+            })
     }
     pub async fn update_item_sn(&self, item_id: &ItemId, sn: &str) -> Result<(), ServiceError> {
-        self.item_repository.update_sn(&item_id, &sn).await.map_err(|error: Error| match error {
-            Error::ItemNotFound => ServiceError::ItemNotFound,
-            _ => ServiceError::InternalServerError
-        })
+        self.item_repository
+            .update_sn(&item_id, &sn)
+            .await
+            .map_err(|error: Error| match error {
+                Error::ItemNotFound => ServiceError::ItemNotFound,
+                _ => ServiceError::InternalServerError,
+            })
     }
     pub async fn withdraw_item(&self, item_id: &ItemId, count: i64, shelf_id: ShelfId) -> Result<(), ServiceError> {
-        self.item_repository.withdraw(item_id, count, shelf_id).await.map_err(|error: Error| match error {
-            Error::ItemNotFound => ServiceError::ItemNotFound,
-            _ => ServiceError::InternalServerError
-        })
+        self.item_repository
+            .withdraw(item_id, count, shelf_id)
+            .await
+            .map_err(|error: Error| match error {
+                Error::ItemNotFound => ServiceError::ItemNotFound,
+                _ => ServiceError::InternalServerError,
+            })
     }
     pub async fn deposit_item(&self, item_id: &ItemId, count: i64, shelf_id: ShelfId) -> Result<(), ServiceError> {
-        self.item_repository.deposit(item_id, count, shelf_id).await.map_err(|error: Error| match error {
-            Error::ItemNotFound => ServiceError::ItemNotFound,
-            _ => ServiceError::InternalServerError
-        })
+        self.item_repository
+            .deposit(item_id, count, shelf_id)
+            .await
+            .map_err(|error: Error| match error {
+                Error::ItemNotFound => ServiceError::ItemNotFound,
+                _ => ServiceError::InternalServerError,
+            })
     }
-    pub async fn transfer_item(&self, item_id: &ItemId, count: i64, shelf_from: ShelfId, shelf_to: ShelfId) -> Result<(), ServiceError> {
-        self.item_repository.transfer(item_id, count, shelf_from, shelf_to).await.map_err(|error: Error| match error {
-            Error::ItemNotFound => ServiceError::ItemNotFound,
-            _ => ServiceError::InternalServerError
-        })
+    pub async fn transfer_item(
+        &self,
+        item_id: &ItemId,
+        count: i64,
+        shelf_from: ShelfId,
+        shelf_to: ShelfId,
+    ) -> Result<(), ServiceError> {
+        self.item_repository
+            .transfer(item_id, count, shelf_from, shelf_to)
+            .await
+            .map_err(|error: Error| match error {
+                Error::ItemNotFound => ServiceError::ItemNotFound,
+                _ => ServiceError::InternalServerError,
+            })
     }
     pub async fn convert_item(&self, from: Vec<ItemXShelf>, into: Vec<ItemXShelf>) -> Result<(), ServiceError> {
         let len_from = from.len();
@@ -72,22 +105,37 @@ impl Service {
         if len_into == 0 {
             return Err(ServiceError::TargetMustBePositive);
         }
-        self.item_repository.convert(from, into).await.map_err(|error: Error| match error {
-            Error::ItemNotFound => ServiceError::ItemNotFound,
-            _ => ServiceError::InternalServerError
-        })
+        self.item_repository
+            .convert(from, into)
+            .await
+            .map_err(|error: Error| match error {
+                Error::ItemNotFound => ServiceError::ItemNotFound,
+                _ => ServiceError::InternalServerError,
+            })
     }
     pub async fn get_item(&self, item_id: &ItemId) -> Result<Item, ServiceError> {
-        self.item_repository.get_one(item_id).await.map_err(|_| ServiceError::ItemNotFound)
+        self.item_repository
+            .get_one(item_id)
+            .await
+            .map_err(|_| ServiceError::ItemNotFound)
     }
     pub async fn get_items(&self, spec: &ListingSpec) -> Result<Listing<Item>, ServiceError> {
-        self.item_repository.get_many(spec).await.map_err(|_| ServiceError::InternalServerError)
+        self.item_repository
+            .get_many(spec)
+            .await
+            .map_err(|_| ServiceError::InternalServerError)
     }
     pub async fn get_items_on_shelf(&self, spec: &ListingSpec, shelf_id: ShelfId) -> Result<Listing<ItemOnShelf>, ServiceError> {
-        self.item_repository.get_many_on_shelf(spec, shelf_id).await.map_err(|_| ServiceError::InternalServerError)
+        self.item_repository
+            .get_many_on_shelf(spec, shelf_id)
+            .await
+            .map_err(|_| ServiceError::InternalServerError)
     }
     pub async fn get_items_in_room(&self, spec: &ListingSpec, room_id: RoomId) -> Result<Listing<ItemInRoom>, ServiceError> {
-        self.item_repository.get_many_in_room(spec, room_id).await.map_err(|_| ServiceError::InternalServerError)
+        self.item_repository
+            .get_many_in_room(spec, room_id)
+            .await
+            .map_err(|_| ServiceError::InternalServerError)
     }
 }
 
@@ -137,9 +185,13 @@ impl DbItemRepository {
         self.database.get_items(spec.offset, spec.limit, &spec.sort).await
     }
     pub async fn get_many_on_shelf(&self, spec: &ListingSpec, shelf_id: ShelfId) -> Result<Listing<ItemOnShelf>, Error> {
-        self.database.get_items_on_shelf(spec.offset, spec.limit, &spec.sort, shelf_id).await
+        self.database
+            .get_items_on_shelf(spec.offset, spec.limit, &spec.sort, shelf_id)
+            .await
     }
     pub async fn get_many_in_room(&self, spec: &ListingSpec, room_id: RoomId) -> Result<Listing<ItemInRoom>, Error> {
-        self.database.get_items_in_room(spec.offset, spec.limit, &spec.sort, room_id).await
+        self.database
+            .get_items_in_room(spec.offset, spec.limit, &spec.sort, room_id)
+            .await
     }
 }

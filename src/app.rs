@@ -35,7 +35,7 @@ pub async fn run(configuration: Configuration, api_version: &Version) -> Running
     // From [database] config
     let database_connect_url = settings.database.connect_url.clone();
     // From [net] config
-    let net_ip = "127.0.0.1".to_string();
+    let net_ip = settings.net.ip.clone().unwrap_or("localhost".to_string());
     let net_port = settings.net.port;
     // IMPORTANT: drop settings before starting server to avoid read locks that
     // leads to requests hanging.

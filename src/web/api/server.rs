@@ -1,6 +1,6 @@
 use std::future::IntoFuture;
 use std::io;
-use std::net::SocketAddr;
+use std::net::{IpAddr, Ipv6Addr, SocketAddr};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -24,17 +24,35 @@ use crate::common::AppData;
 ///
 /// Panics if the API server can't be started.
 pub async fn start(app_data: Arc<AppData>, net_ip: &str, net_port: u16) -> Running {
-    let config_socket_addr: SocketAddr = format!("{net_ip}:{net_port}")
-        .parse()
-        .expect("API server socket address to be valid.");
+    let mut listenfd = ListenFd::from_env();
+    let tcp_listener = match listenfd.take_tcp_listener(0).unwrap() {
+        // if we are given a tcp listener on listen fd 0, we use that one
+        Some(listener) => {
+            listener.set_nonblocking(true).unwrap();
+            let l = TcpListener::from_std(listener).unwrap();
+            let b = l.local_addr().expect("tcp listener to be bound to a socket address.");
+            info!("Starting API server with ListenFd: {} ...", b);
+            l
+        }
+        // otherwise fall back to local listening
+        None => {
+            let config_socket_addr: SocketAddr = match net_ip {
+                "localhost" => SocketAddr::new(IpAddr::V6(Ipv6Addr::LOCALHOST), net_port),
+                "*" => SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), net_port),
+                _ => format!("{net_ip}:{net_port}")
+                    .parse()
+                    .expect("API server socket address to be valid.")
+            };
+            info!("Starting API server with net config: {} ...", config_socket_addr);
+            TcpListener::bind(config_socket_addr).await.expect("a new server from the previously created tcp listener.")
+        }
+    };
 
     let (tx, rx) = oneshot::channel::<ServerStartedMessage>();
 
     // Run the API server
     let join_handle = tokio::spawn(async move {
-        info!("Starting API server with net config: {} ...", config_socket_addr);
-
-        let handle = start_server(config_socket_addr, app_data.clone(), tx);
+        let handle = start_server(tcp_listener, app_data.clone(), tx);
 
         if let Ok(()) = handle.await {
             info!("API server stopped");
@@ -56,18 +74,10 @@ pub async fn start(app_data: Arc<AppData>, net_ip: &str, net_port: u16) -> Runni
 }
 
 async fn start_server(
-    config_socket_addr: SocketAddr,
+    tcp_listener: TcpListener,
     app_data: Arc<AppData>,
     tx: Sender<ServerStartedMessage>,
 ) -> io::Result<()> {
-    let mut listenfd = ListenFd::from_env();
-    let tcp_listener = match listenfd.take_tcp_listener(0).unwrap() {
-        // if we are given a tcp listener on listen fd 0, we use that one
-        Some(listener) => TcpListener::from_std(listener).unwrap(),
-        // otherwise fall back to local listening
-        None => TcpListener::bind(config_socket_addr).await.expect("a new server from the previously created tcp listener."),
-    };
-
     let bound_addr = tcp_listener
         .local_addr()
         .expect("tcp listener to be bound to a socket address.");

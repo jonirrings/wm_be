@@ -90,6 +90,8 @@ pub trait Database: Sync + Send {
 
     /// Get `UserProfile` from `username`.
     async fn get_user_profile_from_username(&self, username: &str) -> Result<UserProfile, Error>;
+    /// Get `UserProfile` from `user_id`.
+    async fn get_user_profile_from_id(&self, user_id: UserId) -> Result<UserProfile, Error>;
 
     /// Get `UserCompact` from `user_id`.
     async fn get_user_compact_from_id(&self, user_id: UserId) -> Result<UserCompact, Error>;

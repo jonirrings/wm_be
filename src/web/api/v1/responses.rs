@@ -14,14 +14,16 @@ pub struct OkResponseData<T> {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ErrorResponseData {
-    pub error: String,
+    pub message: String,
 }
 
 impl IntoResponse for ServiceError {
     fn into_response(self) -> Response {
         json_error_response(
             http_status_code_for_service_error(&self),
-            &ErrorResponseData { error: self.to_string() },
+            &ErrorResponseData {
+                message: self.to_string(),
+            },
         )
     }
 }
@@ -33,7 +35,7 @@ impl IntoResponse for database::Error {
         json_error_response(
             http_status_code_for_service_error(&service_error),
             &ErrorResponseData {
-                error: service_error.to_string(),
+                message: service_error.to_string(),
             },
         )
     }
