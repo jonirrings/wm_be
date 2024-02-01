@@ -36,9 +36,18 @@ impl Service {
                 _ => ServiceError::InternalServerError,
             })
     }
+    pub async fn update_item(&self, item_id: &ItemId, name: &str, desc: &Option<String>, sn: &str) -> Result<(), ServiceError> {
+        self.item_repository
+            .update(item_id, name, desc, sn)
+            .await
+            .map_err(|error: Error| match error {
+                Error::ItemNotFound => ServiceError::ItemNotFound,
+                _ => ServiceError::InternalServerError,
+            })
+    }
     pub async fn update_item_name(&self, item_id: &ItemId, name: &str) -> Result<(), ServiceError> {
         self.item_repository
-            .update_name(&item_id, &name)
+            .update_name(item_id, name)
             .await
             .map_err(|error: Error| match error {
                 Error::ItemNotFound => ServiceError::ItemNotFound,
@@ -47,7 +56,7 @@ impl Service {
     }
     pub async fn update_item_desc(&self, item_id: &ItemId, desc: &str) -> Result<(), ServiceError> {
         self.item_repository
-            .update_desc(&item_id, &desc)
+            .update_desc(item_id, desc)
             .await
             .map_err(|error: Error| match error {
                 Error::ItemNotFound => ServiceError::ItemNotFound,
@@ -56,7 +65,7 @@ impl Service {
     }
     pub async fn update_item_sn(&self, item_id: &ItemId, sn: &str) -> Result<(), ServiceError> {
         self.item_repository
-            .update_sn(&item_id, &sn)
+            .update_sn(item_id, sn)
             .await
             .map_err(|error: Error| match error {
                 Error::ItemNotFound => ServiceError::ItemNotFound,
@@ -156,6 +165,9 @@ impl DbItemRepository {
     }
     pub async fn delete(&self, item_id: &ItemId) -> Result<(), Error> {
         self.database.delete_item(*item_id).await
+    }
+    pub async fn update(&self, item_id: &ItemId, name: &str, desc: &Option<String>, sn: &str) -> Result<(), Error> {
+        self.database.update_item(*item_id, name, desc, sn).await
     }
     pub async fn update_name(&self, item_id: &ItemId, name: &str) -> Result<(), Error> {
         self.database.update_item_name(*item_id, name).await

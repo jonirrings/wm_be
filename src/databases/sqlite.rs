@@ -1,14 +1,11 @@
-use std::mem::swap;
 use std::str::FromStr;
 use std::time::Duration;
 use std::u64;
 
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
-use futures::TryFutureExt;
-use log::{debug, info};
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
-use sqlx::{query, query_as, Acquire, ConnectOptions, Executor, SqlitePool};
+use sqlx::{query, query_as, Acquire, ConnectOptions, SqlitePool};
 
 use crate::databases::database::{self, Database, Driver, Error, Listing, Sorting};
 use crate::models::item::{Item, ItemId, ItemInRoom, ItemOnShelf, ItemXShelf};
@@ -237,6 +234,23 @@ impl Database for Sqlite {
                 }
             })
     }
+    async fn update_room(&self, room_id: RoomId, name: &str, desc: &Option<String>) -> Result<(), Error> {
+        let sql = "UPDATE rooms SET name = ?, description = ? WHERE room_id = ?";
+        query(sql)
+            .bind(name)
+            .bind(desc)
+            .bind(room_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|_| Error::Error)
+            .and_then(|v| {
+                if v.rows_affected() > 0 {
+                    Ok(())
+                } else {
+                    Err(Error::RoomNotFound)
+                }
+            })
+    }
     async fn update_room_name(&self, room_id: RoomId, name: &str) -> Result<(), Error> {
         let sql = "UPDATE rooms SET name = ? WHERE room_id = ?";
         query(sql)
@@ -320,6 +334,25 @@ impl Database for Sqlite {
     async fn delete_shelf(&self, shelf_id: ShelfId) -> Result<(), Error> {
         let sql = "DELETE FROM shelf WHERE shelf_id = ?";
         query(sql)
+            .bind(shelf_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|_| Error::Error)
+            .and_then(|v| {
+                if v.rows_affected() > 0 {
+                    Ok(())
+                } else {
+                    Err(Error::ShelfNotFound)
+                }
+            })
+    }
+
+    async fn update_shelf(&self, shelf_id: ShelfId, name: &str, layer: i64, room_id: RoomId) -> Result<(), Error> {
+        let sql = "UPDATE shelf SET name = ?, layer = ?, room_id = ? WHERE shelf_id = ?";
+        query(sql)
+            .bind(name)
+            .bind(layer)
+            .bind(room_id)
             .bind(shelf_id)
             .execute(&self.pool)
             .await
@@ -449,9 +482,10 @@ impl Database for Sqlite {
         })
     }
     async fn insert_item_and_get_id(&self, name: &str, sn: &str) -> Result<ItemId, Error> {
-        let sql = "INSERT INTO items (name) VALUES (?)";
+        let sql = "INSERT INTO items (name, sn) VALUES (?, ?)";
         query(sql)
             .bind(name)
+            .bind(sn)
             .execute(&self.pool)
             .await
             .map(|v| v.last_insert_rowid())
@@ -471,6 +505,24 @@ impl Database for Sqlite {
     async fn delete_item(&self, item_id: ItemId) -> Result<(), Error> {
         let sql = "DELETE FROM items WHERE item_id = ?";
         query(sql)
+            .bind(item_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|_| Error::Error)
+            .and_then(|v| {
+                if v.rows_affected() > 0 {
+                    Ok(())
+                } else {
+                    Err(Error::ItemNotFound)
+                }
+            })
+    }
+    async fn update_item(&self, item_id: ItemId, name: &str, desc: &Option<String>, sn: &str) -> Result<(), Error> {
+        let sql = "UPDATE items SET name = ?, description = ?, sn = ? WHERE item_id = ?";
+        query(sql)
+            .bind(name)
+            .bind(desc)
+            .bind(sn)
             .bind(item_id)
             .execute(&self.pool)
             .await

@@ -78,7 +78,9 @@ pub async fn connect(db_path: &str) -> Result<Box<dyn Database>, Error> {
 pub trait Database: Sync + Send {
     /// Return current database driver.
     fn get_database_driver(&self) -> Driver;
-    async fn new(db_path: &str) -> Self where Self: Sized;
+    async fn new(db_path: &str) -> Self
+    where
+        Self: Sized;
 
     /// Add new user and return the newly inserted `user_id`.
     async fn insert_user_and_get_id(&self, username: &str, email: &str, password: &str) -> Result<UserId, Error>;
@@ -112,6 +114,8 @@ pub trait Database: Sync + Send {
     async fn insert_room_with_desc_and_get_id(&self, name: &str, desc: &str) -> Result<i64, Error>;
     /// Delete a room.
     async fn delete_room(&self, room_id: RoomId) -> Result<(), Error>;
+    /// Update a room with `room_id`.
+    async fn update_room(&self, room_id: RoomId, name: &str, desc: &Option<String>) -> Result<(), Error>;
     /// Update a room's name with `room_id`.
     async fn update_room_name(&self, room_id: RoomId, name: &str) -> Result<(), Error>;
     /// Update a room's description with `room_id`.
@@ -122,30 +126,45 @@ pub trait Database: Sync + Send {
     async fn get_rooms(&self, offset: u64, limit: u8, sort: &Sorting) -> Result<Listing<Room>, Error>;
     async fn insert_shelf_and_get_id(&self, name: &str, layer: i64, room_id: RoomId) -> Result<ShelfId, Error>;
     async fn delete_shelf(&self, shelf_id: ShelfId) -> Result<(), Error>;
+    async fn update_shelf(&self, shelf_id: ShelfId, name: &str, layer: i64, room_id: RoomId) -> Result<(), Error>;
     async fn update_shelf_name(&self, shelf_id: ShelfId, name: &str) -> Result<(), Error>;
     async fn update_shelf_layer(&self, shelf_id: ShelfId, layer: i64) -> Result<(), Error>;
     async fn update_shelf_room(&self, shelf_id: ShelfId, room_id: RoomId) -> Result<(), Error>;
     async fn get_shelf_from_id(&self, shelf_id: ShelfId) -> Result<Shelf, Error>;
     async fn get_shelves(&self, offset: u64, limit: u8, sort: &Sorting) -> Result<Listing<Shelf>, Error>;
-    async fn get_shelves_in_room(&self, offset: u64, limit: u8, sort: &Sorting, room_id: RoomId) -> Result<Listing<Shelf>, Error>;
+    async fn get_shelves_in_room(&self, offset: u64, limit: u8, sort: &Sorting, room_id: RoomId)
+        -> Result<Listing<Shelf>, Error>;
     async fn insert_item_and_get_id(&self, name: &str, sn: &str) -> Result<ItemId, Error>;
     async fn insert_item_with_desc_and_get_id(&self, name: &str, desc: &str, sn: &str) -> Result<ItemId, Error>;
     async fn delete_item(&self, item_id: ItemId) -> Result<(), Error>;
+    async fn update_item(&self, item_id: ItemId, name: &str, desc: &Option<String>, sn: &str) -> Result<(), Error>;
     async fn update_item_name(&self, item_id: ItemId, name: &str) -> Result<(), Error>;
     async fn update_item_desc(&self, item_id: ItemId, desc: &str) -> Result<(), Error>;
     async fn update_item_sn(&self, item_id: ItemId, sn: &str) -> Result<(), Error>;
     async fn get_item_from_id(&self, item_id: ItemId) -> Result<Item, Error>;
     async fn get_items(&self, offset: u64, limit: u8, sort: &Sorting) -> Result<Listing<Item>, Error>;
-    async fn get_items_on_shelf(&self, offset: u64, limit: u8, sort: &Sorting, shelf_id: ShelfId) -> Result<Listing<ItemOnShelf>, Error>;
-    async fn get_items_in_room(&self, offset: u64, limit: u8, sort: &Sorting, room_id: RoomId) -> Result<Listing<ItemInRoom>, Error>;
+    async fn get_items_on_shelf(
+        &self,
+        offset: u64,
+        limit: u8,
+        sort: &Sorting,
+        shelf_id: ShelfId,
+    ) -> Result<Listing<ItemOnShelf>, Error>;
+    async fn get_items_in_room(
+        &self,
+        offset: u64,
+        limit: u8,
+        sort: &Sorting,
+        room_id: RoomId,
+    ) -> Result<Listing<ItemInRoom>, Error>;
     async fn transfer_items(&self, item_id: ItemId, count: i64, shelf_from: ShelfId, shelf_to: ShelfId) -> Result<(), Error>;
     async fn withdraw_items(&self, item_id: ItemId, count: i64, shelf_id: ShelfId) -> Result<(), Error>;
     async fn deposit_items(&self, item_id: ItemId, count: i64, shelf_id: ShelfId) -> Result<(), Error>;
-    async fn convert_items(&self, from: Vec<ItemXShelf>, into: Vec<ItemXShelf>, ) -> Result<(), Error>;
+    async fn convert_items(&self, from: Vec<ItemXShelf>, into: Vec<ItemXShelf>) -> Result<(), Error>;
 }
 #[allow(clippy::module_name_repetitions)]
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Listing<T>{
+pub struct Listing<T> {
     pub total: u64,
     pub data: Vec<T>,
 }

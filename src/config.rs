@@ -2,14 +2,14 @@ use std::path::Path;
 use std::sync::Arc;
 use std::{env, fs};
 
+use crate::common::{ListingCriteria, ListingSpec};
+use crate::databases::database::Sorting;
 use config::{Config, ConfigError, File, FileFormat};
+use located_error::{Located, LocatedError};
 use log::warn;
 use serde_derive::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::sync::RwLock;
-use located_error::{Located, LocatedError};
-use crate::common::{ListingCriteria, ListingSpec};
-use crate::databases::database::Sorting;
 
 #[derive(Debug, Default, Clone)]
 pub struct Info {
@@ -18,9 +18,7 @@ pub struct Info {
 
 impl Info {
     #[allow(clippy::needless_pass_by_value)]
-    pub fn new(env_var_config: String,
-               env_var_path_config: String,
-               default_path_config: String) -> Result<Self, Error> {
+    pub fn new(env_var_config: String, env_var_path_config: String, default_path_config: String) -> Result<Self, Error> {
         let index = if let Ok(index) = env::var(&env_var_config) {
             println!("Loading configuration from env var {env_var_config} ...");
 
@@ -44,9 +42,7 @@ impl Info {
                 .map_err(|_e: std::convert::Infallible| Error::Infallible)?
         };
 
-        Ok(Self {
-            index,
-        })
+        Ok(Self { index })
     }
 }
 
@@ -90,7 +86,7 @@ impl Default for Website {
 /// It's the port number `0`
 pub const FREE_PORT: u16 = 0;
 
-/// The the base URL for the API.
+/// The base URL for the API.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Network {
     pub ip: Option<String>,
@@ -299,7 +295,7 @@ impl Configuration {
         let config_builder = Config::builder();
 
         #[allow(unused_assignments)]
-            let mut config = Config::default();
+        let mut config = Config::default();
 
         if Path::new(config_path).exists() {
             config = config_builder.add_source(File::with_name(config_path)).build()?;
@@ -327,8 +323,9 @@ impl Configuration {
     pub fn load(info: &Info) -> Result<Configuration, Error> {
         let config_builder = Config::builder()
             .add_source(File::from_str(&info.index, FileFormat::Toml))
-            .build().unwrap();//fixme
-        let index_config: WarehouseIndex = config_builder.try_deserialize().unwrap();//fixme
+            .build()
+            .unwrap(); //fixme
+        let index_config: WarehouseIndex = config_builder.try_deserialize().unwrap(); //fixme
 
         Ok(Configuration {
             settings: RwLock::new(index_config),
@@ -385,16 +382,8 @@ impl Configuration {
         let sort = request.sort.unwrap_or(Sorting::IdAsc);
         let offset = request.offset.unwrap_or(0);
         let limit = request.limit.unwrap_or(default_page_size);
-        let limit = if limit > max_page_size {
-            max_page_size
-        } else {
-            limit
-        };
-        ListingSpec {
-            offset,
-            limit,
-            sort,
-        }
+        let limit = if limit > max_page_size { max_page_size } else { limit };
+        ListingSpec { offset, limit, sort }
     }
 }
 

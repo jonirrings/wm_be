@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use crate::common::{ ListingSpec};
-use crate::errors::ServiceError;
+use crate::common::ListingSpec;
 use crate::databases::database::{Database, Error, Listing};
+use crate::errors::ServiceError;
 use crate::models::room::{Room, RoomId};
 use crate::web::api::v1::contexts::room::forms::AddRoomForm;
 
@@ -15,38 +15,72 @@ impl Service {
     pub fn new(room_repository: Arc<DbRoomRepository>) -> Self {
         Self { room_repository }
     }
-    pub async fn add_room(&self, registration_form: &AddRoomForm/*, opt_user_id: Option<UserId>*/) -> Result<RoomId, ServiceError> {
+    pub async fn add_room(
+        &self,
+        registration_form: &AddRoomForm, /*, opt_user_id: Option<UserId>*/
+    ) -> Result<RoomId, ServiceError> {
         if let Some(desc) = &registration_form.description {
             if desc.len() > 200 {
                 return Err(ServiceError::DescNotValid);
             }
-            return self.room_repository.add_with_desc(&registration_form.name, desc).await.map_err(|_| ServiceError::InternalServerError);
+            return self
+                .room_repository
+                .add_with_desc(&registration_form.name, desc)
+                .await
+                .map_err(|_| ServiceError::InternalServerError);
         }
-        self.room_repository.add(&registration_form.name).await.map_err(|_| ServiceError::InternalServerError)
+        self.room_repository
+            .add(&registration_form.name)
+            .await
+            .map_err(|_| ServiceError::InternalServerError)
     }
     pub async fn close_room(&self, room_id: &RoomId) -> Result<(), ServiceError> {
-        self.room_repository.delete(&room_id).await.map_err(|error: Error| match error {
-            Error::RoomNotFound => ServiceError::RoomNotFound,
-            _ => ServiceError::InternalServerError
-        })
+        self.room_repository
+            .delete(&room_id)
+            .await
+            .map_err(|error: Error| match error {
+                Error::RoomNotFound => ServiceError::RoomNotFound,
+                _ => ServiceError::InternalServerError,
+            })
+    }
+    pub async fn update_room(&self, room_id: &RoomId, name: &str, desc: &Option<String>) -> Result<(), ServiceError> {
+        self.room_repository
+            .update(&room_id, name, desc)
+            .await
+            .map_err(|error: Error| match error {
+                Error::RoomNotFound => ServiceError::RoomNotFound,
+                _ => ServiceError::InternalServerError,
+            })
     }
     pub async fn update_room_name(&self, room_id: &RoomId, name: &str) -> Result<(), ServiceError> {
-        self.room_repository.update_name(&room_id, &name).await.map_err(|error: Error| match error {
-            Error::RoomNotFound => ServiceError::RoomNotFound,
-            _ => ServiceError::InternalServerError
-        })
+        self.room_repository
+            .update_name(&room_id, &name)
+            .await
+            .map_err(|error: Error| match error {
+                Error::RoomNotFound => ServiceError::RoomNotFound,
+                _ => ServiceError::InternalServerError,
+            })
     }
     pub async fn update_room_desc(&self, room_id: &RoomId, desc: &str) -> Result<(), ServiceError> {
-        self.room_repository.update_name(&room_id, &desc).await.map_err(|error: Error| match error {
-            Error::RoomNotFound => ServiceError::RoomNotFound,
-            _ => ServiceError::InternalServerError
-        })
+        self.room_repository
+            .update_name(&room_id, &desc)
+            .await
+            .map_err(|error: Error| match error {
+                Error::RoomNotFound => ServiceError::RoomNotFound,
+                _ => ServiceError::InternalServerError,
+            })
     }
-    pub async fn get_room(&self, room_id: &RoomId/*, opt_user_id: Option<UserId>*/) -> Result<Room, ServiceError> {
-        self.room_repository.get_one(room_id).await.map_err(|_| ServiceError::RoomNotFound)
+    pub async fn get_room(&self, room_id: &RoomId /*, opt_user_id: Option<UserId>*/) -> Result<Room, ServiceError> {
+        self.room_repository
+            .get_one(room_id)
+            .await
+            .map_err(|_| ServiceError::RoomNotFound)
     }
     pub async fn get_rooms(&self, spec: &ListingSpec) -> Result<Listing<Room>, ServiceError> {
-        self.room_repository.get_many(&spec).await.map_err(|_| ServiceError::RoomNotFound)
+        self.room_repository
+            .get_many(&spec)
+            .await
+            .map_err(|_| ServiceError::RoomNotFound)
     }
 }
 
@@ -67,6 +101,9 @@ impl DbRoomRepository {
     }
     pub async fn delete(&self, room_id: &RoomId) -> Result<(), Error> {
         self.database.delete_room(*room_id).await
+    }
+    pub async fn update(&self, room_id: &RoomId, name: &str, desc: &Option<String>) -> Result<(), Error> {
+        self.database.update_room(*room_id, name, desc).await
     }
     pub async fn update_name(&self, room_id: &RoomId, name: &str) -> Result<(), Error> {
         self.database.update_room_name(*room_id, name).await

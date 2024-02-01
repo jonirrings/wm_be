@@ -3,14 +3,12 @@
 > 
 > inspired by torrust (most code was copied from torrust)
 
-# tag
-a tag with name, SN, shelf no and a QR/Bar Code
-
-# shelf
-a shelf with id, name, house, grid, levels
-
-# event 
-an event with id, name, description
-
-# log
-the history of a tag with event and description
+# Run
+you could run with `auto-reload` by system_fd
+```shell
+systemfd --no-pid -s http::6000 -- cargo watch -x "run --bin wm"
+```
+or just run by cargo
+```shell
+cargo run --bin wm
+```
