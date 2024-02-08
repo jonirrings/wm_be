@@ -7,8 +7,8 @@ use axum::Json;
 use super::errors;
 use super::forms::{AddShelfForm, UpdateShelfForm};
 use super::responses;
-use crate::common::ListingCriteria;
 use crate::common::{AppData, ExtraRoomId};
+use crate::common::{ListingCriteria, PagedConf};
 use crate::errors::ServiceError;
 use crate::models::shelf::ShelfId;
 use crate::web::api::v1::extractors::bearer_token::Extract;
@@ -41,6 +41,19 @@ pub async fn delete_handler(
         Err(error) => error.into_response(),
     }
 }
+
+#[allow(clippy::unused_async)]
+pub async fn batch_delete_handler(
+    Extension(app_data): Extension<Arc<AppData>>,
+    Extract(maybe_bearer_token): Extract,
+    Json(ids): Json<Vec<i64>>,
+) -> Response {
+    match app_data.shelf_service.remove_shelves(&ids).await {
+        Ok(res) => Json(res).into_response(),
+        Err(error) => error.into_response(),
+    }
+}
+
 #[allow(clippy::unused_async)]
 pub async fn update_handler(
     Extension(app_data): Extension<Arc<AppData>>,
@@ -98,12 +111,21 @@ pub async fn get_handler(
 }
 
 #[allow(clippy::unused_async)]
-pub async fn get_all_handler(
+pub async fn get_paged_handler(
     Extension(app_data): Extension<Arc<AppData>>,
     Extract(maybe_bearer_token): Extract,
     Query(criteria): Query<ListingCriteria>,
     Query(extra_room): Query<ExtraRoomId>,
+    Query(paged_conf): Query<PagedConf>,
 ) -> Response {
+    if let Some(b) = paged_conf.all {
+        if b {
+            return match app_data.shelf_service.get_all_shelves(extra_room.room_id).await {
+                Ok(shelves) => Json(OkResponseData { data: shelves }).into_response(),
+                Err(error) => error.into_response(),
+            };
+        }
+    }
     let spec = app_data.cfg.spec_from_criteria(&criteria).await;
     match app_data.shelf_service.get_shelves(&spec, extra_room.room_id).await {
         Ok(shelves) => Json(OkResponseData { data: shelves }).into_response(),

@@ -6,6 +6,13 @@ name = "Warehouse Management Development"
 [net]
 ip = "127.0.0.1"
 port = 6000
+# localhost and * are special mark
+v4 = "localhost"
+v4port = 6000
+v6 = "localhost"
+v6port = 6000
+stream_sock = "/run/wm_stream.sock"
+datagram_sock = "/run/wm_datagram.sock"
 
 [auth]
 email_on_signup = "Optional"

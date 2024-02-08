@@ -1,7 +1,9 @@
-use serde_derive::{Deserialize, Serialize};
-use sqlx::FromRow;
 use crate::models::room::RoomId;
 use crate::models::shelf::ShelfId;
+use serde_derive::{Deserialize, Serialize};
+use sqlx::FromRow;
+use time::serde::iso8601;
+use time::OffsetDateTime;
 
 #[allow(clippy::module_name_repetitions)]
 pub type ItemId = i64;
@@ -13,6 +15,10 @@ pub struct Item {
     pub description: Option<String>,
     ///serial number
     pub sn: String,
+    #[serde(with = "iso8601")]
+    pub created_at: OffsetDateTime,
+    #[serde(with = "iso8601::option")]
+    pub updated_at: Option<OffsetDateTime>,
 }
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, FromRow)]
 pub struct ItemCompact {
@@ -21,9 +27,9 @@ pub struct ItemCompact {
     pub description: Option<String>,
     ///serial number
     pub sn: String,
-    pub count:i64,
-    pub shelf_id:ShelfId,
-    pub room_id:RoomId,
+    pub count: i64,
+    pub shelf_id: ShelfId,
+    pub room_id: RoomId,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, FromRow)]

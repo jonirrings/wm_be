@@ -1,4 +1,4 @@
-use crate::common::ListingSpec;
+use crate::common::{BatchDelResult, ListingSpec};
 use crate::databases::database::{Database, Error, Listing};
 use crate::errors::ServiceError;
 use crate::models::room::RoomId;
@@ -22,7 +22,16 @@ impl Service {
     }
     pub async fn remove_shelf(&self, shelf_id: &ShelfId) -> Result<(), ServiceError> {
         self.shelf_repository
-            .delete(&shelf_id)
+            .delete_one(&shelf_id)
+            .await
+            .map_err(|error: Error| match error {
+                Error::ShelfNotFound => ServiceError::ShelfNotFound,
+                _ => ServiceError::InternalServerError,
+            })
+    }
+    pub async fn remove_shelves(&self, ids: &Vec<ShelfId>) -> Result<BatchDelResult, ServiceError> {
+        self.shelf_repository
+            .delete_many(ids)
             .await
             .map_err(|error: Error| match error {
                 Error::ShelfNotFound => ServiceError::ShelfNotFound,
@@ -78,6 +87,12 @@ impl Service {
             .await
             .map_err(|_| ServiceError::InternalServerError)
     }
+    pub async fn get_all_shelves(&self, room_id: Option<RoomId>) -> Result<Vec<Shelf>, ServiceError> {
+        self.shelf_repository
+            .get_all(room_id)
+            .await
+            .map_err(|_| ServiceError::InternalServerError)
+    }
 }
 
 pub struct DbShelfRepository {
@@ -92,8 +107,11 @@ impl DbShelfRepository {
     pub async fn add(&self, name: &str, layer: i64, room_id: RoomId) -> Result<ShelfId, Error> {
         self.database.insert_shelf_and_get_id(name, layer, room_id).await
     }
-    pub async fn delete(&self, shelf_id: &ShelfId) -> Result<(), Error> {
+    pub async fn delete_one(&self, shelf_id: &ShelfId) -> Result<(), Error> {
         self.database.delete_shelf(*shelf_id).await
+    }
+    pub async fn delete_many(&self, ids: &Vec<ShelfId>) -> Result<BatchDelResult, Error> {
+        self.database.delete_shelves(ids).await
     }
     pub async fn update(&self, shelf_id: &ShelfId, name: &str, layer: i64, room_id: RoomId) -> Result<(), Error> {
         self.database.update_shelf(*shelf_id, name, layer, room_id).await
@@ -118,5 +136,11 @@ impl DbShelfRepository {
                 .await;
         }
         self.database.get_shelves(spec.offset, spec.limit, &spec.sort).await
+    }
+    pub async fn get_all(&self, room_id: Option<RoomId>) -> Result<Vec<Shelf>, Error> {
+        if let Some(room_id) = room_id {
+            return self.database.get_all_shelves_in_room(room_id).await;
+        }
+        self.database.get_all_shelves().await
     }
 }

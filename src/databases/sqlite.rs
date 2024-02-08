@@ -2,8 +2,10 @@ use std::str::FromStr;
 use std::time::Duration;
 use std::u64;
 
+use crate::common::BatchDelResult;
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
+use sqlx::encode::IsNull::No;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use sqlx::{query, query_as, Acquire, ConnectOptions, SqlitePool};
 
@@ -48,7 +50,7 @@ impl Database for Sqlite {
         // start db transaction
         let mut tx = conn.begin().await.map_err(|_| Error::Error)?;
         // create the user account and get the user id
-        let sql = "INSERT INTO users (created_at) VALUES (strftime('%Y-%m-%d %H:%M:%S',DATETIME('now', 'utc')))";
+        let sql = "INSERT INTO users (created_at) VALUES (datetime('now')";
         let user_id = query(sql)
             .execute(&mut *tx)
             .await
@@ -234,6 +236,9 @@ impl Database for Sqlite {
                 }
             })
     }
+    async fn delete_rooms(&self, ids: &Vec<RoomId>) -> Result<BatchDelResult, Error> {
+        todo!()
+    }
     async fn update_room(&self, room_id: RoomId, name: &str, desc: &Option<String>) -> Result<(), Error> {
         let sql = "UPDATE rooms SET name = ?, description = ? WHERE room_id = ?";
         query(sql)
@@ -311,11 +316,19 @@ impl Database for Sqlite {
             .bind(limit)
             .fetch_all(&self.pool)
             .await
-            .map_err(|_| database::Error::Error)?;
+            .map_err(|_| Error::Error)?;
         Ok(Listing {
             total: u64::try_from(count).expect("variable `count` is larger than u32"),
             data: rooms,
         })
+    }
+    async fn get_all_rooms(&self) -> Result<Vec<Room>, Error> {
+        let sql = "SELECT * FROM rooms";
+        let rooms: Vec<Room> = query_as::<_, Room>(&sql)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|_| Error::Error)?;
+        Ok(rooms)
     }
     async fn insert_shelf_and_get_id(&self, name: &str, layer: i64, room_id: RoomId) -> Result<ShelfId, Error> {
         let sql = "INSERT INTO shelf (name, layer, room_id) VALUES (?, ?, ?)";
@@ -346,7 +359,9 @@ impl Database for Sqlite {
                 }
             })
     }
-
+    async fn delete_shelves(&self, ids: &Vec<ShelfId>) -> Result<BatchDelResult, Error> {
+        todo!()
+    }
     async fn update_shelf(&self, shelf_id: ShelfId, name: &str, layer: i64, room_id: RoomId) -> Result<(), Error> {
         let sql = "UPDATE shelf SET name = ?, layer = ?, room_id = ? WHERE shelf_id = ?";
         query(sql)
@@ -422,7 +437,7 @@ impl Database for Sqlite {
             .map_err(|_| Error::ShelfNotFound)
     }
     async fn get_shelves(&self, offset: u64, limit: u8, sort: &Sorting) -> Result<Listing<Shelf>, Error> {
-        let sql = "SELECT COUNT(*) as count FROM rooms";
+        let sql = "SELECT COUNT(*) as count FROM shelf";
         let count_result: Result<i64, Error> = query_as(sql)
             .fetch_one(&self.pool)
             .await
@@ -481,6 +496,23 @@ impl Database for Sqlite {
             data: shelves,
         })
     }
+    async fn get_all_shelves(&self) -> Result<Vec<Shelf>, Error> {
+        let sql = "SELECT * FROM shelf";
+        let shelves: Vec<Shelf> = query_as::<_, Shelf>(&sql)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|_| Error::Error)?;
+        Ok(shelves)
+    }
+    async fn get_all_shelves_in_room(&self, room_id: RoomId) -> Result<Vec<Shelf>, Error> {
+        let sql = "SELECT * FROM shelf WHERE room_id = ?";
+        let shelves: Vec<Shelf> = query_as::<_, Shelf>(&sql)
+            .bind(room_id)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|_| Error::Error)?;
+        Ok(shelves)
+    }
     async fn insert_item_and_get_id(&self, name: &str, sn: &str) -> Result<ItemId, Error> {
         let sql = "INSERT INTO items (name, sn) VALUES (?, ?)";
         query(sql)
@@ -516,6 +548,9 @@ impl Database for Sqlite {
                     Err(Error::ItemNotFound)
                 }
             })
+    }
+    async fn delete_items(&self, ids: &Vec<ItemId>) -> Result<BatchDelResult, Error> {
+        todo!()
     }
     async fn update_item(&self, item_id: ItemId, name: &str, desc: &Option<String>, sn: &str) -> Result<(), Error> {
         let sql = "UPDATE items SET name = ?, description = ?, sn = ? WHERE item_id = ?";
@@ -617,7 +652,18 @@ impl Database for Sqlite {
             data: items,
         })
     }
-    async fn get_items_on_shelf(
+    async fn get_all_items(&self) -> Result<Vec<Item>, Error> {
+        let sql = "SELECT * FROM items";
+        let items: Vec<Item> = query_as::<_, Item>(&sql)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|_| Error::Error)?;
+        Ok(items)
+    }
+    async fn get_stocks_on_shelves(&self, offset: u64, limit: u8, sort: &Sorting) -> Result<Listing<ItemOnShelf>, Error> {
+        todo!()
+    }
+    async fn get_stocks_on_shelf(
         &self,
         offset: u64,
         limit: u8,
@@ -625,7 +671,7 @@ impl Database for Sqlite {
         shelf_id: ShelfId,
     ) -> Result<Listing<ItemOnShelf>, Error> {
         let sql = "SELECT COUNT(*) as count
-FROM shelf_items si
+FROM stock si
          JOIN items it ON it.item_id = si.item_id
          JOIN shelf sf ON si.shelf_id = sf.shelf_id
 WHERE si.shelf_id = ?";
@@ -642,7 +688,7 @@ WHERE si.shelf_id = ?";
        sf.name     shelf_name,
        si.count    count,
        it.sn       sn
-FROM shelf_items si
+FROM stock si
          JOIN items it ON it.item_id = si.item_id
          JOIN shelf sf ON si.shelf_id = sf.shelf_id
 WHERE si.shelf_id =  ? LIMIT ?, ?";
@@ -658,7 +704,10 @@ WHERE si.shelf_id =  ? LIMIT ?, ?";
             data: items,
         })
     }
-    async fn get_items_in_room(
+    async fn get_stocks_in_rooms(&self, offset: u64, limit: u8, sort: &Sorting) -> Result<Listing<ItemInRoom>, Error> {
+        todo!()
+    }
+    async fn get_stocks_in_room(
         &self,
         offset: u64,
         limit: u8,
@@ -667,7 +716,7 @@ WHERE si.shelf_id =  ? LIMIT ?, ?";
     ) -> Result<Listing<ItemInRoom>, Error> {
         let sql = "SELECT COUNT(*) count
 FROM (SELECT SUM(si.count) inner_count
-      FROM shelf_items si
+      FROM stock si
                JOIN items it ON it.item_id = si.item_id
                JOIN shelf sf ON si.shelf_id = sf.shelf_id
                JOIN rooms r ON sf.room_id = r.room_id
@@ -680,7 +729,7 @@ FROM (SELECT SUM(si.count) inner_count
             .map_err(|_| Error::Error);
         let count = count_result?;
         let sql = "SELECT it.item_id, it.name item_name,SUM(si.count) count, r.room_id, r.name room_name
-FROM shelf_items si
+FROM stock si
          JOIN items it ON it.item_id = si.item_id
          JOIN shelf sf ON si.shelf_id = sf.shelf_id
          JOIN rooms r ON sf.room_id = r.room_id
@@ -703,7 +752,7 @@ WHERE r.room_id = ? GROUP BY it.item_id LIMIT ?, ?";
         }
         let mut conn = self.pool.acquire().await.map_err(|_| Error::Error)?;
         let mut tx = conn.begin().await.map_err(|_| Error::Error)?;
-        let sql = "SELECT * FROM shelf_items WHERE item_id = ? and shelf_id = ?";
+        let sql = "SELECT * FROM stock WHERE item_id = ? and shelf_id = ?";
         let x_from = query_as::<_, ItemXShelf>(sql)
             .bind(item_id)
             .bind(shelf_from)
@@ -715,7 +764,7 @@ WHERE r.room_id = ? GROUP BY it.item_id LIMIT ?, ?";
             drop(tx.rollback().await);
             return Err(Error::InsufficientItem);
         }
-        let update_sql = "UPDATE shelf_items SET count = ? WHERE item_id = ? and shelf_id = ?";
+        let update_sql = "UPDATE stock SET count = ? WHERE item_id = ? and shelf_id = ?";
         let update_res = query(update_sql)
             .bind(new_from_count)
             .bind(item_id)
@@ -753,7 +802,7 @@ WHERE r.room_id = ? GROUP BY it.item_id LIMIT ?, ?";
                 }
             }
         } else {
-            let sql = "INSERT INTO shelf_items (count, item_id, shelf_id) VALUES (?, ?, ?)";
+            let sql = "INSERT INTO stock (count, item_id, shelf_id) VALUES (?, ?, ?)";
             let insert_result = query(sql)
                 .bind(count)
                 .bind(item_id)
@@ -780,7 +829,7 @@ WHERE r.room_id = ? GROUP BY it.item_id LIMIT ?, ?";
         }
         let mut conn = self.pool.acquire().await.map_err(|_| Error::Error)?;
         let mut tx = conn.begin().await.map_err(|_| Error::Error)?;
-        let sql = "SELECT * FROM shelf_items WHERE item_id = ? and shelf_id = ?";
+        let sql = "SELECT * FROM stock WHERE item_id = ? and shelf_id = ?";
         let x_res = query_as::<_, ItemXShelf>(sql)
             .bind(item_id)
             .bind(shelf_id)
@@ -789,10 +838,10 @@ WHERE r.room_id = ? GROUP BY it.item_id LIMIT ?, ?";
         let new_count;
         let sql = if let Ok(x) = x_res {
             new_count = x.count + count;
-            "UPDATE shelf_items SET count = ? WHERE item_id = ? and shelf_id = ?"
+            "UPDATE stock SET count = ? WHERE item_id = ? and shelf_id = ?"
         } else {
             new_count = count;
-            "INSERT INTO shelf_items (count, item_id, shelf_id) VALUES (?, ?, ?)"
+            "INSERT INTO stock (count, item_id, shelf_id) VALUES (?, ?, ?)"
         };
         let upsert_result = query(sql)
             .bind(new_count)
@@ -819,7 +868,7 @@ WHERE r.room_id = ? GROUP BY it.item_id LIMIT ?, ?";
         }
         let mut conn = self.pool.acquire().await.map_err(|_| Error::Error)?;
         let mut tx = conn.begin().await.map_err(|_| Error::Error)?;
-        let sql = "SELECT * FROM shelf_items WHERE item_id = ? and shelf_id = ?";
+        let sql = "SELECT * FROM stock WHERE item_id = ? and shelf_id = ?";
         let x = query_as::<_, ItemXShelf>(sql)
             .bind(item_id)
             .bind(shelf_id)
@@ -831,7 +880,7 @@ WHERE r.room_id = ? GROUP BY it.item_id LIMIT ?, ?";
             drop(tx.rollback().await);
             return Err(Error::InsufficientItem);
         }
-        let sql = "UPDATE shelf_items SET count = ? WHERE item_id = ? and shelf_id = ?";
+        let sql = "UPDATE stock SET count = ? WHERE item_id = ? and shelf_id = ?";
         let update_result = query(sql)
             .bind(new_count)
             .bind(item_id)
@@ -856,9 +905,9 @@ WHERE r.room_id = ? GROUP BY it.item_id LIMIT ?, ?";
         // todo, insufficient item must be more clear
         let mut conn = self.pool.acquire().await.map_err(|_| Error::Error)?;
         let mut tx = conn.begin().await.map_err(|_| Error::Error)?;
-        let select_sql = "SELECT * FROM shelf_items WHERE item_id = ? and shelf_id = ?";
-        let update_sql = "UPDATE shelf_items SET count = ? WHERE item_id = ? and shelf_id = ?";
-        let insert_sql = "INSERT INTO shelf_items (count, item_id, shelf_id) VALUES (?, ?, ?)";
+        let select_sql = "SELECT * FROM stock WHERE item_id = ? and shelf_id = ?";
+        let update_sql = "UPDATE stock SET count = ? WHERE item_id = ? and shelf_id = ?";
+        let insert_sql = "INSERT INTO stock (count, item_id, shelf_id) VALUES (?, ?, ?)";
         for x_from in from {
             if x_from.count <= 0 {
                 drop(tx.rollback().await);

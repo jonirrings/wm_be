@@ -1,6 +1,6 @@
-use super::forms::{AddItemForm, ConvertItemForm, ItemOnShelfForm, TransferItemForm, UpdateItemForm};
+use super::forms::{AddItemForm, UpdateItemForm};
 use super::responses;
-use crate::common::{AppData, ExtraRoomId, ExtraShelfId, ListingCriteria};
+use crate::common::{AppData, ListingCriteria, PagedConf};
 use crate::errors::ServiceError;
 use crate::models::item::ItemId;
 use crate::web::api::v1::extractors::bearer_token::Extract;
@@ -45,6 +45,17 @@ pub async fn delete_handler(
 }
 
 #[allow(clippy::unused_async)]
+pub async fn batch_delete_handler(
+    Extension(app_data): Extension<Arc<AppData>>,
+    Extract(maybe_bearer_token): Extract,
+    Json(ids): Json<Vec<i64>>,
+) -> Response {
+    match app_data.item_service.remove_items(&ids).await {
+        Ok(res) => Json(res).into_response(),
+        Err(error) => error.into_response(),
+    }
+}
+#[allow(clippy::unused_async)]
 pub async fn update_handler(
     Extension(app_data): Extension<Arc<AppData>>,
     Extract(maybe_bearer_token): Extract,
@@ -60,6 +71,7 @@ pub async fn update_handler(
         Err(error) => error.into_response(),
     }
 }
+
 #[allow(clippy::unused_async)]
 pub async fn patch_handler(
     Extension(app_data): Extension<Arc<AppData>>,
@@ -101,90 +113,23 @@ pub async fn get_handler(
 }
 
 #[allow(clippy::unused_async)]
-pub async fn get_all_handler(
+pub async fn get_paged_handler(
     Extension(app_data): Extension<Arc<AppData>>,
     Extract(maybe_bearer_token): Extract,
     Query(criteria): Query<ListingCriteria>,
-    Query(extra_shelf): Query<ExtraShelfId>,
-    Query(extra_room): Query<ExtraRoomId>,
+    Query(paged_conf): Query<PagedConf>,
 ) -> Response {
+    if let Some(b) = paged_conf.all {
+        if b {
+            return match app_data.item_service.get_all_items().await {
+                Ok(items) => Json(OkResponseData { data: items }).into_response(),
+                Err(error) => error.into_response(),
+            };
+        }
+    }
     let spec = app_data.cfg.spec_from_criteria(&criteria).await;
-    if let Some(shelf_id) = extra_shelf.shelf_id {
-        return match app_data.item_service.get_items_on_shelf(&spec, shelf_id).await {
-            Ok(items) => Json(OkResponseData { data: items }).into_response(),
-            Err(error) => error.into_response(),
-        };
-    }
-    if let Some(room_id) = extra_room.room_id {
-        return match app_data.item_service.get_items_in_room(&spec, room_id).await {
-            Ok(items) => Json(OkResponseData { data: items }).into_response(),
-            Err(error) => error.into_response(),
-        };
-    }
     match app_data.item_service.get_items(&spec).await {
         Ok(items) => Json(OkResponseData { data: items }).into_response(),
-        Err(error) => error.into_response(),
-    }
-}
-
-#[allow(clippy::unused_async)]
-pub async fn transfer_handler(
-    Extension(app_data): Extension<Arc<AppData>>,
-    Extract(maybe_bearer_token): Extract,
-    Json(item_form): Json<TransferItemForm>,
-) -> Response {
-    match app_data
-        .item_service
-        .transfer_item(&item_form.item_id, item_form.count, item_form.shelf_from, item_form.shelf_to)
-        .await
-    {
-        Ok(_) => Json(OkResponseData { data: "todo" }).into_response(),
-        Err(error) => error.into_response(),
-    }
-}
-
-#[allow(clippy::unused_async)]
-pub async fn withdraw_handler(
-    Extension(app_data): Extension<Arc<AppData>>,
-    Extract(maybe_bearer_token): Extract,
-    Path(item_id): Path<ItemId>,
-    Json(item_form): Json<ItemOnShelfForm>,
-) -> Response {
-    match app_data
-        .item_service
-        .withdraw_item(&item_id, item_form.count, item_form.shelf_id)
-        .await
-    {
-        Ok(_) => Json(OkResponseData { data: "todo" }).into_response(),
-        Err(error) => error.into_response(),
-    }
-}
-
-#[allow(clippy::unused_async)]
-pub async fn deposit_handler(
-    Extension(app_data): Extension<Arc<AppData>>,
-    Extract(maybe_bearer_token): Extract,
-    Path(item_id): Path<ItemId>,
-    Json(item_form): Json<ItemOnShelfForm>,
-) -> Response {
-    match app_data
-        .item_service
-        .deposit_item(&item_id, item_form.count, item_form.shelf_id)
-        .await
-    {
-        Ok(_) => Json(OkResponseData { data: "todo" }).into_response(),
-        Err(error) => error.into_response(),
-    }
-}
-
-#[allow(clippy::unused_async)]
-pub async fn convert_handler(
-    Extension(app_data): Extension<Arc<AppData>>,
-    Extract(maybe_bearer_token): Extract,
-    Json(item_form): Json<ConvertItemForm>,
-) -> Response {
-    match app_data.item_service.convert_item(item_form.from, item_form.into).await {
-        Ok(_) => Json(OkResponseData { data: "todo" }).into_response(),
         Err(error) => error.into_response(),
     }
 }

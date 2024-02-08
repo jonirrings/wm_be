@@ -1,14 +1,13 @@
-use axum::routing::{delete, get, post};
+use axum::routing::{delete, get};
 use axum::Router;
 
 use super::handlers::{
-    add_handler, convert_handler, delete_handler, deposit_handler, get_all_handler, get_handler, patch_handler, transfer_handler,
-    update_handler, withdraw_handler,
+    add_handler, batch_delete_handler, delete_handler, get_handler, get_paged_handler, patch_handler, update_handler,
 };
 
 pub fn router() -> Router {
     Router::new()
-        .route("/", get(get_all_handler).post(add_handler))
+        .route("/", get(get_paged_handler).post(add_handler).delete(batch_delete_handler))
         .route(
             "/:id",
             delete(delete_handler)
@@ -16,8 +15,4 @@ pub fn router() -> Router {
                 .patch(patch_handler)
                 .get(get_handler),
         )
-        .route("/:id/withdraw", post(withdraw_handler))
-        .route("/:id/deposit", post(deposit_handler))
-        .route("/:id/transfer", post(transfer_handler))
-        .route("/convert", post(convert_handler))
 }

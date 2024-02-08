@@ -1,6 +1,8 @@
+use super::room::RoomId;
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
-use super::room::RoomId;
+use time::serde::iso8601;
+use time::OffsetDateTime;
 
 pub type ShelfId = i64;
 
@@ -10,4 +12,8 @@ pub struct Shelf {
     pub name: String,
     pub layer: i64,
     pub room_id: RoomId,
+    #[serde(with = "iso8601")]
+    pub created_at: OffsetDateTime,
+    #[serde(with = "iso8601::option")]
+    pub updated_at: Option<OffsetDateTime>,
 }

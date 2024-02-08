@@ -1,4 +1,6 @@
 use serde::{Deserialize, Serialize};
+use time::serde::iso8601;
+use time::OffsetDateTime;
 
 #[allow(clippy::module_name_repetitions)]
 pub type UserId = i64;
@@ -6,7 +8,8 @@ pub type UserId = i64;
 #[derive(Debug, Serialize, Deserialize, Clone, sqlx::FromRow)]
 pub struct User {
     pub user_id: UserId,
-    pub created_at: Option<String>,
+    #[serde(with = "iso8601")]
+    pub created_at: OffsetDateTime,
     pub administrator: bool,
 }
 
@@ -26,7 +29,8 @@ pub struct UserProfile {
     pub email_verified: bool,
     pub bio: String,
     pub avatar: String,
-    pub updated_at: Option<String>,
+    #[serde(with = "iso8601::option")]
+    pub updated_at: Option<OffsetDateTime>,
 }
 
 #[allow(clippy::module_name_repetitions)]

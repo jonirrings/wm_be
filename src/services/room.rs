@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::common::ListingSpec;
+use crate::common::{BatchDelResult, ListingSpec};
 use crate::databases::database::{Database, Error, Listing};
 use crate::errors::ServiceError;
 use crate::models::room::{Room, RoomId};
@@ -36,13 +36,23 @@ impl Service {
     }
     pub async fn close_room(&self, room_id: &RoomId) -> Result<(), ServiceError> {
         self.room_repository
-            .delete(&room_id)
+            .delete_one(&room_id)
             .await
             .map_err(|error: Error| match error {
                 Error::RoomNotFound => ServiceError::RoomNotFound,
                 _ => ServiceError::InternalServerError,
             })
     }
+    pub async fn close_rooms(&self, ids: &Vec<RoomId>) -> Result<BatchDelResult, ServiceError> {
+        self.room_repository
+            .delete_many(ids)
+            .await
+            .map_err(|error: Error| match error {
+                Error::RoomNotFound => ServiceError::RoomNotFound,
+                _ => ServiceError::InternalServerError,
+            })
+    }
+
     pub async fn update_room(&self, room_id: &RoomId, name: &str, desc: &Option<String>) -> Result<(), ServiceError> {
         self.room_repository
             .update(&room_id, name, desc)
@@ -80,7 +90,13 @@ impl Service {
         self.room_repository
             .get_many(&spec)
             .await
-            .map_err(|_| ServiceError::RoomNotFound)
+            .map_err(|_| ServiceError::InternalServerError)
+    }
+    pub async fn get_all_rooms(&self) -> Result<Vec<Room>, ServiceError> {
+        self.room_repository
+            .get_all()
+            .await
+            .map_err(|_| ServiceError::InternalServerError)
     }
 }
 
@@ -99,8 +115,11 @@ impl DbRoomRepository {
     pub async fn add_with_desc(&self, name: &str, desc: &str) -> Result<RoomId, Error> {
         self.database.insert_room_with_desc_and_get_id(name, desc).await
     }
-    pub async fn delete(&self, room_id: &RoomId) -> Result<(), Error> {
+    pub async fn delete_one(&self, room_id: &RoomId) -> Result<(), Error> {
         self.database.delete_room(*room_id).await
+    }
+    pub async fn delete_many(&self, ids: &Vec<RoomId>) -> Result<BatchDelResult, Error> {
+        self.database.delete_rooms(ids).await
     }
     pub async fn update(&self, room_id: &RoomId, name: &str, desc: &Option<String>) -> Result<(), Error> {
         self.database.update_room(*room_id, name, desc).await
@@ -116,5 +135,8 @@ impl DbRoomRepository {
     }
     pub async fn get_many(&self, spec: &ListingSpec) -> Result<Listing<Room>, Error> {
         self.database.get_rooms(spec.offset, spec.limit, &spec.sort).await
+    }
+    pub async fn get_all(&self) -> Result<Vec<Room>, Error> {
+        self.database.get_all_rooms().await
     }
 }

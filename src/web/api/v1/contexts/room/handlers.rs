@@ -9,8 +9,8 @@ use serde::Deserialize;
 use super::errors;
 use super::forms::{AddRoomForm, UpdateRoomForm};
 use super::responses;
-use crate::common::AppData;
-use crate::common::ListingCriteria;
+use crate::common::{AppData, PagedConf};
+use crate::common::{ListingCriteria};
 use crate::errors::ServiceError;
 use crate::models::room::{Room, RoomId};
 use crate::web::api::v1::auth::get_optional_logged_in_user;
@@ -41,6 +41,18 @@ pub async fn delete_handler(
 ) -> Response {
     match app_data.room_service.close_room(&room_id).await {
         Ok(_) => responses::mutated_room(room_id).into_response(),
+        Err(error) => error.into_response(),
+    }
+}
+
+#[allow(clippy::unused_async)]
+pub async fn batch_delete_handler(
+    Extension(app_data): Extension<Arc<AppData>>,
+    Extract(maybe_bearer_token): Extract,
+    Json(ids): Json<Vec<i64>>,
+) -> Response {
+    match app_data.room_service.close_rooms(&ids).await {
+        Ok(res) => Json(res).into_response(),
         Err(error) => error.into_response(),
     }
 }
@@ -100,11 +112,20 @@ pub async fn get_handler(
 }
 
 #[allow(clippy::unused_async)]
-pub async fn get_all_handler(
+pub async fn get_paged_handler(
     Extension(app_data): Extension<Arc<AppData>>,
     Extract(maybe_bearer_token): Extract,
     Query(criteria): Query<ListingCriteria>,
+    Query(paged_conf): Query<PagedConf>,
 ) -> Response {
+    if let Some(b) = paged_conf.all {
+        if b {
+            return match app_data.room_service.get_all_rooms().await {
+                Ok(rooms) => Json(OkResponseData { data: rooms }).into_response(),
+                Err(error) => error.into_response(),
+            };
+        }
+    }
     let spec = app_data.cfg.spec_from_criteria(&criteria).await;
     match app_data.room_service.get_rooms(&spec).await {
         Ok(rooms) => Json(OkResponseData { data: rooms }).into_response(),

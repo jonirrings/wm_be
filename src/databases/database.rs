@@ -1,13 +1,14 @@
+use crate::common::BatchDelResult;
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 
 // use crate::databases::mysql::Mysql;
+// use crate::databases::postgres::Postgres;
 use crate::databases::sqlite::Sqlite;
 use crate::models::item::{Item, ItemId, ItemInRoom, ItemOnShelf, ItemXShelf};
 use crate::models::room::{Room, RoomId};
 use crate::models::shelf::{Shelf, ShelfId};
-// use crate::databases::postgres::Postgres;
 use crate::models::user::{User, UserAuthentication, UserCompact, UserId, UserProfile};
 
 /// Database drivers.
@@ -114,6 +115,7 @@ pub trait Database: Sync + Send {
     async fn insert_room_with_desc_and_get_id(&self, name: &str, desc: &str) -> Result<i64, Error>;
     /// Delete a room.
     async fn delete_room(&self, room_id: RoomId) -> Result<(), Error>;
+    async fn delete_rooms(&self, ids: &Vec<RoomId>) -> Result<BatchDelResult, Error>;
     /// Update a room with `room_id`.
     async fn update_room(&self, room_id: RoomId, name: &str, desc: &Option<String>) -> Result<(), Error>;
     /// Update a room's name with `room_id`.
@@ -124,8 +126,10 @@ pub trait Database: Sync + Send {
     async fn get_room_from_id(&self, room_id: RoomId) -> Result<Room, Error>;
     /// Get 'rooms' from criteria
     async fn get_rooms(&self, offset: u64, limit: u8, sort: &Sorting) -> Result<Listing<Room>, Error>;
+    async fn get_all_rooms(&self) -> Result<Vec<Room>, Error>;
     async fn insert_shelf_and_get_id(&self, name: &str, layer: i64, room_id: RoomId) -> Result<ShelfId, Error>;
     async fn delete_shelf(&self, shelf_id: ShelfId) -> Result<(), Error>;
+    async fn delete_shelves(&self, ids: &Vec<ShelfId>) -> Result<BatchDelResult, Error>;
     async fn update_shelf(&self, shelf_id: ShelfId, name: &str, layer: i64, room_id: RoomId) -> Result<(), Error>;
     async fn update_shelf_name(&self, shelf_id: ShelfId, name: &str) -> Result<(), Error>;
     async fn update_shelf_layer(&self, shelf_id: ShelfId, layer: i64) -> Result<(), Error>;
@@ -134,23 +138,30 @@ pub trait Database: Sync + Send {
     async fn get_shelves(&self, offset: u64, limit: u8, sort: &Sorting) -> Result<Listing<Shelf>, Error>;
     async fn get_shelves_in_room(&self, offset: u64, limit: u8, sort: &Sorting, room_id: RoomId)
         -> Result<Listing<Shelf>, Error>;
+    async fn get_all_shelves(&self) -> Result<Vec<Shelf>, Error>;
+    async fn get_all_shelves_in_room(&self, room_id: RoomId) -> Result<Vec<Shelf>, Error>;
     async fn insert_item_and_get_id(&self, name: &str, sn: &str) -> Result<ItemId, Error>;
     async fn insert_item_with_desc_and_get_id(&self, name: &str, desc: &str, sn: &str) -> Result<ItemId, Error>;
     async fn delete_item(&self, item_id: ItemId) -> Result<(), Error>;
+    async fn delete_items(&self, ids: &Vec<ItemId>) -> Result<BatchDelResult, Error>;
+
     async fn update_item(&self, item_id: ItemId, name: &str, desc: &Option<String>, sn: &str) -> Result<(), Error>;
     async fn update_item_name(&self, item_id: ItemId, name: &str) -> Result<(), Error>;
     async fn update_item_desc(&self, item_id: ItemId, desc: &str) -> Result<(), Error>;
     async fn update_item_sn(&self, item_id: ItemId, sn: &str) -> Result<(), Error>;
     async fn get_item_from_id(&self, item_id: ItemId) -> Result<Item, Error>;
     async fn get_items(&self, offset: u64, limit: u8, sort: &Sorting) -> Result<Listing<Item>, Error>;
-    async fn get_items_on_shelf(
+    async fn get_all_items(&self) -> Result<Vec<Item>, Error>;
+    async fn get_stocks_on_shelves(&self, offset: u64, limit: u8, sort: &Sorting) -> Result<Listing<ItemOnShelf>, Error>;
+    async fn get_stocks_on_shelf(
         &self,
         offset: u64,
         limit: u8,
         sort: &Sorting,
         shelf_id: ShelfId,
     ) -> Result<Listing<ItemOnShelf>, Error>;
-    async fn get_items_in_room(
+    async fn get_stocks_in_rooms(&self, offset: u64, limit: u8, sort: &Sorting) -> Result<Listing<ItemInRoom>, Error>;
+    async fn get_stocks_in_room(
         &self,
         offset: u64,
         limit: u8,
@@ -162,6 +173,7 @@ pub trait Database: Sync + Send {
     async fn deposit_items(&self, item_id: ItemId, count: i64, shelf_id: ShelfId) -> Result<(), Error>;
     async fn convert_items(&self, from: Vec<ItemXShelf>, into: Vec<ItemXShelf>) -> Result<(), Error>;
 }
+
 #[allow(clippy::module_name_repetitions)]
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Listing<T> {

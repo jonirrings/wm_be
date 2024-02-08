@@ -379,7 +379,7 @@ impl Configuration {
         let default_page_size = settings.api.default_page_size;
         let max_page_size = settings.api.max_page_size;
         drop(settings);
-        let sort = request.sort.unwrap_or(Sorting::IdAsc);
+        let sort = request.sort.unwrap_or(Sorting::IdDesc);
         let offset = request.offset.unwrap_or(0);
         let limit = request.limit.unwrap_or(default_page_size);
         let limit = if limit > max_page_size { max_page_size } else { limit };
