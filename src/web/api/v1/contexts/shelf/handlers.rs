@@ -1,18 +1,18 @@
 use std::sync::Arc;
 
-use axum::extract::{self, Extension, Path, Query};
+use axum::extract::{Extension, Path, Query};
 use axum::response::{IntoResponse, Response};
 use axum::Json;
 
-use super::errors;
-use super::forms::{AddShelfForm, UpdateShelfForm};
-use super::responses;
 use crate::common::{AppData, ExtraRoomId};
 use crate::common::{ListingCriteria, PagedConf};
 use crate::errors::ServiceError;
 use crate::models::shelf::ShelfId;
 use crate::web::api::v1::extractors::bearer_token::Extract;
 use crate::web::api::v1::responses::OkResponseData;
+
+use super::forms::{AddShelfForm, UpdateShelfForm};
+use super::responses;
 
 #[allow(clippy::unused_async)]
 pub async fn add_handler(
@@ -70,6 +70,7 @@ pub async fn update_handler(
         Err(error) => error.into_response(),
     }
 }
+
 #[allow(clippy::unused_async)]
 pub async fn patch_handler(
     Extension(app_data): Extension<Arc<AppData>>,

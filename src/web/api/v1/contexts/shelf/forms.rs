@@ -1,4 +1,5 @@
 use serde_derive::{Deserialize, Serialize};
+
 use crate::models::room::RoomId;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

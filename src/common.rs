@@ -1,3 +1,7 @@
+use std::sync::Arc;
+
+use serde_derive::{Deserialize, Serialize};
+
 use crate::config::Configuration;
 use crate::databases::database::{Database, Sorting};
 use crate::mailer;
@@ -10,8 +14,6 @@ use crate::services::shelf;
 use crate::services::stock;
 use crate::services::user::{self, DbBannedUserList, DbUserProfileRepository, DbUserRepository};
 use crate::web::api::v1::auth::Authentication;
-use serde_derive::{Deserialize, Serialize};
-use std::sync::Arc;
 
 pub struct AppData {
     pub cfg: Arc<Configuration>,
@@ -86,6 +88,7 @@ pub struct ListingCriteria {
     pub limit: Option<u8>,
     pub sort: Option<Sorting>,
 }
+
 #[derive(Debug, Deserialize)]
 pub struct PagedConf {
     pub all: Option<bool>,
@@ -96,6 +99,7 @@ pub struct FailureReason {
     name: String,
     reason: String,
 }
+
 #[derive(Debug, Serialize)]
 pub struct BatchDelResult {
     pub s: u64,
@@ -108,6 +112,7 @@ pub enum Cond {
     Shelf,
     Room,
 }
+
 #[derive(Debug, Deserialize)]
 pub struct StockCond {
     pub cond: Cond,

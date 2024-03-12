@@ -1,14 +1,17 @@
-use super::forms::{AddItemForm, UpdateItemForm};
-use super::responses;
+use std::sync::Arc;
+
+use axum::extract::{Path, Query};
+use axum::response::{IntoResponse, Response};
+use axum::{Extension, Json};
+
 use crate::common::{AppData, ListingCriteria, PagedConf};
 use crate::errors::ServiceError;
 use crate::models::item::ItemId;
 use crate::web::api::v1::extractors::bearer_token::Extract;
 use crate::web::api::v1::responses::OkResponseData;
-use axum::extract::{Path, Query};
-use axum::response::{IntoResponse, Response};
-use axum::{Extension, Json};
-use std::sync::Arc;
+
+use super::forms::{AddItemForm, UpdateItemForm};
+use super::responses;
 
 #[allow(clippy::unused_async)]
 pub async fn add_handler(
@@ -55,6 +58,7 @@ pub async fn batch_delete_handler(
         Err(error) => error.into_response(),
     }
 }
+
 #[allow(clippy::unused_async)]
 pub async fn update_handler(
     Extension(app_data): Extension<Arc<AppData>>,

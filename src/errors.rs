@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::error;
 
 use derive_more::{Display, Error};
@@ -13,6 +12,10 @@ pub type ServiceResult<V> = Result<V, ServiceError>;
 pub enum ServiceError {
     #[display(fmt = "internal server error")]
     InternalServerError,
+    #[display(fmt = "Database Connection Pool Failed")]
+    DBConnectionPoolError,
+    #[display(fmt = "Database Transaction Failed")]
+    DBTransactionError,
 
     #[display(fmt = "This server is is closed for registration. Contact admin if this is unexpected")]
     ClosedForRegistration,
@@ -188,6 +191,8 @@ pub fn http_status_code_for_service_error(error: &ServiceError) -> StatusCode {
         ServiceError::MissingMandatoryMetadataFields => StatusCode::BAD_REQUEST,
         ServiceError::Unauthorized => StatusCode::FORBIDDEN,
         ServiceError::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
+        ServiceError::DBConnectionPoolError => StatusCode::INTERNAL_SERVER_ERROR,
+        ServiceError::DBTransactionError => StatusCode::INTERNAL_SERVER_ERROR,
         ServiceError::EmailMissing => StatusCode::NOT_FOUND,
         ServiceError::FailedToSendVerificationEmail => StatusCode::INTERNAL_SERVER_ERROR,
         ServiceError::WhitelistingError => StatusCode::INTERNAL_SERVER_ERROR,
@@ -211,6 +216,8 @@ pub fn map_database_error_to_service_error(error: &database::Error) -> ServiceEr
     match error {
         database::Error::Error => ServiceError::InternalServerError,
         database::Error::ErrorWithText(_) => ServiceError::InternalServerError,
+        database::Error::ConnectionPoolFailed => ServiceError::DBConnectionPoolError,
+        database::Error::TransactionError => ServiceError::DBTransactionError,
         database::Error::UsernameTaken => ServiceError::UsernameTaken,
         database::Error::EmailTaken => ServiceError::EmailTaken,
         database::Error::UserNotFound => ServiceError::UserNotFound,

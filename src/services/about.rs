@@ -1,6 +1,4 @@
 //! Templates for "about" static pages.
-use crate::web::api::v1::routes::API_VERSION_URL_PREFIX;
-
 #[must_use]
 pub fn index_page() -> String {
     page()
@@ -24,7 +22,8 @@ pub fn page() -> String {
             <a href="/info/license">license</a>
         </footer>
     </html>
-"#.to_string()
+"#
+    .to_string()
 }
 
 #[must_use]
@@ -46,5 +45,6 @@ pub fn license_page() -> String {
             <a href="/info/about">about</a>
         </footer>
     </html>
-"#.to_string()
+"#
+    .to_string()
 }

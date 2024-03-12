@@ -1,6 +1,7 @@
+use serde_derive::{Deserialize, Serialize};
+
 use crate::models::item::{ItemId, ItemXShelf};
 use crate::models::shelf::ShelfId;
-use serde_derive::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ItemOnShelfForm {
@@ -16,6 +17,7 @@ pub struct TransferItemForm {
     pub shelf_to: ShelfId,
     pub count: i64,
 }
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ConvertItemForm {
     pub from: Vec<ItemXShelf>,

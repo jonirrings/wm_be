@@ -1,21 +1,18 @@
-use std::str::FromStr;
 use std::sync::Arc;
 
-use axum::extract::{self, Extension, Multipart, Path, Query};
-use axum::response::{IntoResponse, Redirect, Response};
+use axum::extract::{Extension, Path, Query};
+use axum::response::{IntoResponse, Response};
 use axum::Json;
-use serde::Deserialize;
 
-use super::errors;
-use super::forms::{AddRoomForm, UpdateRoomForm};
-use super::responses;
+use crate::common::ListingCriteria;
 use crate::common::{AppData, PagedConf};
-use crate::common::{ListingCriteria};
 use crate::errors::ServiceError;
-use crate::models::room::{Room, RoomId};
-use crate::web::api::v1::auth::get_optional_logged_in_user;
+use crate::models::room::RoomId;
 use crate::web::api::v1::extractors::bearer_token::Extract;
 use crate::web::api::v1::responses::OkResponseData;
+
+use super::forms::{AddRoomForm, UpdateRoomForm};
+use super::responses;
 
 #[allow(clippy::unused_async)]
 pub async fn add_handler(
@@ -73,6 +70,7 @@ pub async fn update_handler(
         Err(error) => error.into_response(),
     }
 }
+
 #[allow(clippy::unused_async)]
 pub async fn patch_handler(
     Extension(app_data): Extension<Arc<AppData>>,

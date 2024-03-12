@@ -1,6 +1,6 @@
 use std::future::IntoFuture;
 use std::io;
-use std::net::{IpAddr, Ipv6Addr, SocketAddr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -13,10 +13,10 @@ use tokio::sync::oneshot::{self, Sender};
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
 
-use super::v1::routes::router;
-use super::{Running, ServerStartedMessage};
 use crate::common::AppData;
 
+use super::v1::routes::router;
+use super::{Running, ServerStartedMessage};
 
 /// Starts the API server.
 ///
@@ -37,14 +37,16 @@ pub async fn start(app_data: Arc<AppData>, net_ip: &str, net_port: u16) -> Runni
         // otherwise fall back to local listening
         None => {
             let config_socket_addr: SocketAddr = match net_ip {
-                "localhost" => SocketAddr::new(IpAddr::V6(Ipv6Addr::LOCALHOST), net_port),
-                "*" => SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), net_port),
+                "localhost" => SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), net_port),
+                "*" => SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), net_port),
                 _ => format!("{net_ip}:{net_port}")
                     .parse()
-                    .expect("API server socket address to be valid.")
+                    .expect("API server socket address to be valid."),
             };
             info!("Starting API server with net config: {} ...", config_socket_addr);
-            TcpListener::bind(config_socket_addr).await.expect("a new server from the previously created tcp listener.")
+            TcpListener::bind(config_socket_addr)
+                .await
+                .expect("a new server from the previously created tcp listener.")
         }
     };
 
@@ -73,11 +75,7 @@ pub async fn start(app_data: Arc<AppData>, net_ip: &str, net_port: u16) -> Runni
     }
 }
 
-async fn start_server(
-    tcp_listener: TcpListener,
-    app_data: Arc<AppData>,
-    tx: Sender<ServerStartedMessage>,
-) -> io::Result<()> {
+async fn start_server(tcp_listener: TcpListener, app_data: Arc<AppData>, tx: Sender<ServerStartedMessage>) -> io::Result<()> {
     let bound_addr = tcp_listener
         .local_addr()
         .expect("tcp listener to be bound to a socket address.");
@@ -100,13 +98,11 @@ async fn start_server(
 
 async fn shutdown_signal(bound_addr: SocketAddr) {
     let ctrl_c = async {
-        signal::ctrl_c()
-            .await
-            .expect("failed to install Ctrl+C handler");
+        signal::ctrl_c().await.expect("failed to install Ctrl+C handler");
     };
 
     #[cfg(unix)]
-        let terminate = async {
+    let terminate = async {
         signal::unix::signal(signal::unix::SignalKind::terminate())
             .expect("failed to install signal handler")
             .recv()
@@ -114,7 +110,7 @@ async fn shutdown_signal(bound_addr: SocketAddr) {
     };
 
     #[cfg(not(unix))]
-        let terminate = std::future::pending::<()>();
+    let terminate = std::future::pending::<()>();
 
     tokio::select! {
         _ = ctrl_c => {},

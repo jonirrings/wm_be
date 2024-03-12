@@ -1,5 +1,6 @@
 use serde_derive::{Deserialize, Serialize};
 use sqlx::FromRow;
+
 use super::role::RoleId;
 
 #[allow(clippy::module_name_repetitions)]

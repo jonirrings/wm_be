@@ -27,8 +27,8 @@ pub struct UserProfile {
     pub username: String,
     pub email: String,
     pub email_verified: bool,
-    pub bio: String,
-    pub avatar: String,
+    pub bio: Option<String>,
+    pub avatar: Option<String>,
     #[serde(with = "iso8601::option")]
     pub updated_at: Option<OffsetDateTime>,
 }

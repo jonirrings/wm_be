@@ -1,14 +1,13 @@
-pub mod server;
-pub mod v1;
-
 use std::net::SocketAddr;
 use std::sync::Arc;
 
 use tokio::task::JoinHandle;
 
-
 use crate::common::AppData;
 use crate::web::api;
+
+pub mod server;
+pub mod v1;
 
 /// API versions.
 pub enum Version {

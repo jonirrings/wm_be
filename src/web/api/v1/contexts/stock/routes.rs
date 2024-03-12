@@ -1,9 +1,10 @@
+use axum::routing::{delete, get, patch, post};
+use axum::Router;
+
 use super::handlers::{
     convert_handler, deposit_handler, get_items_in_room_handler, get_items_in_rooms_handler, get_items_on_shelf_handler,
     get_items_on_shelves_handler, transfer_handler, withdraw_handler,
 };
-use axum::routing::{delete, get, patch, post};
-use axum::Router;
 
 pub fn router() -> Router {
     Router::new()

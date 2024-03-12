@@ -4,13 +4,11 @@ log_level = "info"
 name = "Warehouse Management Development"
 
 [net]
-ip = "127.0.0.1"
-port = 6000
 # localhost and * are special mark
 v4 = "localhost"
-v4port = 6000
+v4port = 9000
 v6 = "localhost"
-v6port = 6000
+v6port = 9000
 stream_sock = "/run/wm_stream.sock"
 datagram_sock = "/run/wm_datagram.sock"
 
@@ -21,7 +19,9 @@ max_password_length = 64
 secret_key = "MaxVerstappenWC2021"
 
 [database]
-connect_url = "sqlite://storage/database/wm.sqlite?mode=rwc"
+#connect_url = "sqlite://storage/database/wm.sqlite?mode=rwc"
+connect_url = "mysql://wm:Ware@House2@localhost:3306/wm"
+# connect_url = "postgresql://wm:Ware@House@localhost:5432/wm"
 
 [mail]
 email_verification_enabled = false

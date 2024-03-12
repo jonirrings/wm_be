@@ -13,4 +13,3 @@ pub struct UpdateItemForm {
     pub description: Option<String>,
     pub sn: Option<String>,
 }
-

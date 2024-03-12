@@ -1,5 +1,6 @@
 use std::net::SocketAddr;
 use std::sync::Arc;
+
 use tokio::task::JoinHandle;
 
 use crate::bootstrap::logging;
@@ -36,8 +37,8 @@ pub async fn run(configuration: Configuration, api_version: &Version) -> Running
     // From [database] config
     let database_connect_url = settings.database.connect_url.clone();
     // From [net] config
-    let net_ip = settings.net.ip.clone().unwrap_or("localhost".to_string());
-    let net_port = settings.net.port;
+    let net_ip = settings.net.v4.clone().unwrap_or("localhost".to_string());
+    let net_port = settings.net.v4port;
     // IMPORTANT: drop settings before starting server to avoid read locks that
     // leads to requests hanging.
     drop(settings);

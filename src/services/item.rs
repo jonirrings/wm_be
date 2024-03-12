@@ -1,8 +1,9 @@
+use std::sync::Arc;
+
 use crate::common::{BatchDelResult, ListingSpec};
 use crate::databases::database::{Database, Error, Listing};
 use crate::errors::ServiceError;
 use crate::models::item::{Item, ItemId};
-use std::sync::Arc;
 
 pub struct Service {
     item_repository: Arc<DbItemRepository>,

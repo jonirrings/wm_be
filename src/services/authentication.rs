@@ -4,12 +4,13 @@ use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use pbkdf2::Pbkdf2;
 
-use super::user::{DbUserProfileRepository, DbUserRepository};
 use crate::config::Configuration;
 use crate::databases::database::{Database, Error};
 use crate::errors::ServiceError;
 use crate::models::user::{UserAuthentication, UserClaims, UserCompact, UserId};
 use crate::utils::clock;
+
+use super::user::{DbUserProfileRepository, DbUserRepository};
 
 pub struct Service {
     configuration: Arc<Configuration>,

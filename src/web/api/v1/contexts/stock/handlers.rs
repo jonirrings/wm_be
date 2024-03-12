@@ -1,13 +1,16 @@
-use super::forms::{ConvertItemForm, ItemOnShelfForm, TransferItemForm};
+use std::sync::Arc;
+
+use axum::extract::{Path, Query};
+use axum::response::{IntoResponse, Response};
+use axum::{Extension, Json};
+
 use crate::common::{AppData, ListingCriteria};
 use crate::models::room::RoomId;
 use crate::models::shelf::ShelfId;
 use crate::web::api::v1::extractors::bearer_token::Extract;
 use crate::web::api::v1::responses::OkResponseData;
-use axum::extract::{Path, Query};
-use axum::response::{IntoResponse, Response};
-use axum::{Extension, Json};
-use std::sync::Arc;
+
+use super::forms::{ConvertItemForm, ItemOnShelfForm, TransferItemForm};
 
 #[allow(clippy::unused_async)]
 pub async fn get_items_on_shelves_handler(
@@ -17,6 +20,7 @@ pub async fn get_items_on_shelves_handler(
 ) -> Response {
     todo!("todo")
 }
+
 #[allow(clippy::unused_async)]
 pub async fn get_items_on_shelf_handler(
     Extension(app_data): Extension<Arc<AppData>>,
@@ -26,6 +30,7 @@ pub async fn get_items_on_shelf_handler(
 ) -> Response {
     todo!("todo")
 }
+
 #[allow(clippy::unused_async)]
 pub async fn get_items_in_rooms_handler(
     Extension(app_data): Extension<Arc<AppData>>,
@@ -34,6 +39,7 @@ pub async fn get_items_in_rooms_handler(
 ) -> Response {
     todo!("todo")
 }
+
 #[allow(clippy::unused_async)]
 pub async fn get_items_in_room_handler(
     Extension(app_data): Extension<Arc<AppData>>,
@@ -43,6 +49,7 @@ pub async fn get_items_in_room_handler(
 ) -> Response {
     todo!("todo")
 }
+
 #[allow(clippy::unused_async)]
 pub async fn transfer_handler(
     Extension(app_data): Extension<Arc<AppData>>,

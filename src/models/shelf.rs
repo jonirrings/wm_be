@@ -1,8 +1,9 @@
-use super::room::RoomId;
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use time::serde::iso8601;
 use time::OffsetDateTime;
+
+use super::room::RoomId;
 
 pub type ShelfId = i64;
 

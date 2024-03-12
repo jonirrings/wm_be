@@ -2,14 +2,16 @@ use std::path::Path;
 use std::sync::Arc;
 use std::{env, fs};
 
-use crate::common::{ListingCriteria, ListingSpec};
-use crate::databases::database::Sorting;
 use config::{Config, ConfigError, File, FileFormat};
-use located_error::{Located, LocatedError};
 use log::warn;
 use serde_derive::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::sync::RwLock;
+
+use located_error::{Located, LocatedError};
+
+use crate::common::{ListingCriteria, ListingSpec};
+use crate::databases::database::Sorting;
 
 #[derive(Debug, Default, Clone)]
 pub struct Info {
@@ -89,9 +91,10 @@ pub const FREE_PORT: u16 = 0;
 /// The base URL for the API.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Network {
-    pub ip: Option<String>,
-    /// The port to listen on. Default to `3001`.
-    pub port: u16,
+    pub v4: Option<String>,
+    pub v4port: u16,
+    pub v6: Option<String>,
+    pub v6port: u16,
     /// The base URL for the API. For example: `http://localhost`.
     /// If not set, the base URL will be inferred from the request.
     pub base_url: Option<String>,
@@ -100,8 +103,10 @@ pub struct Network {
 impl Default for Network {
     fn default() -> Self {
         Self {
-            ip: None,
-            port: 6001,
+            v4: None,
+            v4port: 3001,
+            v6: None,
+            v6port: 3001,
             base_url: None,
         }
     }

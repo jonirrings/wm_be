@@ -2,13 +2,12 @@ use std::str::FromStr;
 use std::time::Duration;
 use std::u64;
 
-use crate::common::BatchDelResult;
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
-use sqlx::encode::IsNull::No;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use sqlx::{query, query_as, Acquire, ConnectOptions, SqlitePool};
 
+use crate::common::BatchDelResult;
 use crate::databases::database::{self, Database, Driver, Error, Listing, Sorting};
 use crate::models::item::{Item, ItemId, ItemInRoom, ItemOnShelf, ItemXShelf};
 use crate::models::room::{Room, RoomId};
@@ -46,9 +45,9 @@ impl Database for Sqlite {
 
     async fn insert_user_and_get_id(&self, username: &str, email: &str, password_hash: &str) -> Result<i64, Error> {
         // open pool connection
-        let mut conn = self.pool.acquire().await.map_err(|_| Error::Error)?;
+        let mut conn = self.pool.acquire().await.map_err(|_| Error::ConnectionPoolFailed)?;
         // start db transaction
-        let mut tx = conn.begin().await.map_err(|_| Error::Error)?;
+        let mut tx = conn.begin().await.map_err(|_| Error::TransactionError)?;
         // create the user account and get the user id
         let sql = "INSERT INTO users (created_at) VALUES (datetime('now')";
         let user_id = query(sql)
@@ -691,7 +690,7 @@ WHERE si.shelf_id = ?";
 FROM stock si
          JOIN items it ON it.item_id = si.item_id
          JOIN shelf sf ON si.shelf_id = sf.shelf_id
-WHERE si.shelf_id =  ? LIMIT ?, ?";
+WHERE si.shelf_id = ? LIMIT ?, ?";
         let items: Vec<ItemOnShelf> = query_as::<_, ItemOnShelf>(&sql)
             .bind(shelf_id)
             .bind(i64::saturating_add_unsigned(0, offset))
@@ -750,8 +749,8 @@ WHERE r.room_id = ? GROUP BY it.item_id LIMIT ?, ?";
         if count <= 0 {
             return Err(Error::CountMustBePositive);
         }
-        let mut conn = self.pool.acquire().await.map_err(|_| Error::Error)?;
-        let mut tx = conn.begin().await.map_err(|_| Error::Error)?;
+        let mut conn = self.pool.acquire().await.map_err(|_| Error::ConnectionPoolFailed)?;
+        let mut tx = conn.begin().await.map_err(|_| Error::TransactionError)?;
         let sql = "SELECT * FROM stock WHERE item_id = ? and shelf_id = ?";
         let x_from = query_as::<_, ItemXShelf>(sql)
             .bind(item_id)
@@ -827,8 +826,8 @@ WHERE r.room_id = ? GROUP BY it.item_id LIMIT ?, ?";
         if count <= 0 {
             return Err(Error::CountMustBePositive);
         }
-        let mut conn = self.pool.acquire().await.map_err(|_| Error::Error)?;
-        let mut tx = conn.begin().await.map_err(|_| Error::Error)?;
+        let mut conn = self.pool.acquire().await.map_err(|_| Error::ConnectionPoolFailed)?;
+        let mut tx = conn.begin().await.map_err(|_| Error::TransactionError)?;
         let sql = "SELECT * FROM stock WHERE item_id = ? and shelf_id = ?";
         let x_res = query_as::<_, ItemXShelf>(sql)
             .bind(item_id)
@@ -866,8 +865,8 @@ WHERE r.room_id = ? GROUP BY it.item_id LIMIT ?, ?";
         if count <= 0 {
             return Err(Error::CountMustBePositive);
         }
-        let mut conn = self.pool.acquire().await.map_err(|_| Error::Error)?;
-        let mut tx = conn.begin().await.map_err(|_| Error::Error)?;
+        let mut conn = self.pool.acquire().await.map_err(|_| Error::ConnectionPoolFailed)?;
+        let mut tx = conn.begin().await.map_err(|_| Error::TransactionError)?;
         let sql = "SELECT * FROM stock WHERE item_id = ? and shelf_id = ?";
         let x = query_as::<_, ItemXShelf>(sql)
             .bind(item_id)
@@ -903,8 +902,8 @@ WHERE r.room_id = ? GROUP BY it.item_id LIMIT ?, ?";
 
     async fn convert_items(&self, from: Vec<ItemXShelf>, into: Vec<ItemXShelf>) -> Result<(), Error> {
         // todo, insufficient item must be more clear
-        let mut conn = self.pool.acquire().await.map_err(|_| Error::Error)?;
-        let mut tx = conn.begin().await.map_err(|_| Error::Error)?;
+        let mut conn = self.pool.acquire().await.map_err(|_| Error::ConnectionPoolFailed)?;
+        let mut tx = conn.begin().await.map_err(|_| Error::TransactionError)?;
         let select_sql = "SELECT * FROM stock WHERE item_id = ? and shelf_id = ?";
         let update_sql = "UPDATE stock SET count = ? WHERE item_id = ? and shelf_id = ?";
         let insert_sql = "INSERT INTO stock (count, item_id, shelf_id) VALUES (?, ?, ?)";

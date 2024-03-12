@@ -8,7 +8,7 @@ const ENV_VAR_CONFIG: &str = "INDEX_CONFIG";
 pub const ENV_VAR_PATH_CONFIG: &str = "INDEX_PATH_CONFIG";
 
 // Default values
-pub const DEFAULT_PATH_CONFIG: &str = "./share/default/config/index.development.sqlite3.toml";
+pub const DEFAULT_PATH_CONFIG: &str = "./share/default/config/index.development.toml";
 /// If present, CORS will be permissive.
 pub const ENV_VAR_CORS_PERMISSIVE: &str = "WM_API_CORS_PERMISSIVE";
 
@@ -19,7 +19,7 @@ pub fn initialize_configuration() -> Configuration {
         ENV_VAR_PATH_CONFIG.to_string(),
         DEFAULT_PATH_CONFIG.to_string(),
     )
-        .unwrap();
+    .unwrap();
 
     Configuration::load(&info).unwrap()
 }

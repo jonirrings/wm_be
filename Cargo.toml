@@ -57,7 +57,7 @@ serde_bytes = "0"
 serde_derive = "1"
 serde_json = "1"
 sha-1 = "0"
-sqlx = { version = "0.7", features = ["migrate", "mysql", "sqlite", "postgres", "runtime-tokio-native-tls", "time"] }
+sqlx = { version = "0.7", features = ["migrate", "any", "mysql", "sqlite", "postgres", "runtime-tokio-native-tls", "time"] }
 tera = { version = "1", default-features = false }
 thiserror = "1.0.56"
 tokio = { version = "1", features = ["fs", "io-util", "macros", "net", "rt-multi-thread", "signal", "sync", "time"] }

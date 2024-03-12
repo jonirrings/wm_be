@@ -1,10 +1,10 @@
-use crate::common::BatchDelResult;
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 
-// use crate::databases::mysql::Mysql;
-// use crate::databases::postgres::Postgres;
+use crate::common::BatchDelResult;
+use crate::databases::mysql::Mysql;
+use crate::databases::postgres::Postgres;
 use crate::databases::sqlite::Sqlite;
 use crate::models::item::{Item, ItemId, ItemInRoom, ItemOnShelf, ItemXShelf};
 use crate::models::room::{Room, RoomId};
@@ -15,8 +15,8 @@ use crate::models::user::{User, UserAuthentication, UserCompact, UserId, UserPro
 #[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize)]
 pub enum Driver {
     Sqlite3,
-    // Mysql,
-    // Postgres,
+    Mysql,
+    Postgres,
 }
 
 /// Sorting options for Item.
@@ -32,6 +32,8 @@ pub enum Sorting {
 #[derive(Debug)]
 pub enum Error {
     Error,
+    ConnectionPoolFailed,
+    TransactionError,
     ErrorWithText(String),
     UnrecognizedDatabaseDriver,
     // when the db path does not start with sqlite or mysql
@@ -53,8 +55,8 @@ pub enum Error {
 pub fn get_driver(db_path: &str) -> Result<Driver, Error> {
     match &db_path.chars().collect::<Vec<char>>() as &[char] {
         ['s', 'q', 'l', 'i', 't', 'e', ..] => Ok(Driver::Sqlite3),
-        // ['m', 'y', 's', 'q', 'l', ..] => Ok(Driver::Mysql),
-        // ['p', 'o', 's', 't', 'g', 'r', 'e', 's', 'q', 'l', ..] => Ok(Driver::Postgres),
+        ['m', 'y', 's', 'q', 'l', ..] => Ok(Driver::Mysql),
+        ['p', 'o', 's', 't', 'g', 'r', 'e', 's', 'q', 'l', ..] => Ok(Driver::Postgres),
         _ => Err(Error::UnrecognizedDatabaseDriver),
     }
 }
@@ -65,12 +67,12 @@ pub fn get_driver(db_path: &str) -> Result<Driver, Error> {
 ///
 /// This function will return an `Error::UnrecognizedDatabaseDriver` if unable to match database type.
 pub async fn connect(db_path: &str) -> Result<Box<dyn Database>, Error> {
-    let db_driver = self::get_driver(db_path)?;
+    let db_driver = get_driver(db_path)?;
 
     Ok(match db_driver {
         Driver::Sqlite3 => Box::new(Sqlite::new(db_path).await),
-        // Driver::Mysql => Box::new(Mysql::new(db_path).await),
-        // Driver::Postgres => Box::new(Postgres::new(db_path).await),
+        Driver::Mysql => Box::new(Mysql::new(db_path).await),
+        Driver::Postgres => Box::new(Postgres::new(db_path).await),
     })
 }
 
@@ -144,7 +146,6 @@ pub trait Database: Sync + Send {
     async fn insert_item_with_desc_and_get_id(&self, name: &str, desc: &str, sn: &str) -> Result<ItemId, Error>;
     async fn delete_item(&self, item_id: ItemId) -> Result<(), Error>;
     async fn delete_items(&self, ids: &Vec<ItemId>) -> Result<BatchDelResult, Error>;
-
     async fn update_item(&self, item_id: ItemId, name: &str, desc: &Option<String>, sn: &str) -> Result<(), Error>;
     async fn update_item_name(&self, item_id: ItemId, name: &str) -> Result<(), Error>;
     async fn update_item_desc(&self, item_id: ItemId, desc: &str) -> Result<(), Error>;

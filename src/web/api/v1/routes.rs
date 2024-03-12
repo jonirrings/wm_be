@@ -2,16 +2,18 @@ use std::env;
 use std::sync::Arc;
 
 use axum::extract::DefaultBodyLimit;
+use axum::http::StatusCode;
 use axum::routing::get;
 use axum::{Extension, Json, Router};
-use axum::http::StatusCode;
 use serde_json::{json, Value};
 use tower_http::compression::CompressionLayer;
 use tower_http::cors::CorsLayer;
-//fixme we may use tower_http::auth layer
-use super::contexts::{about, user, room, shelf, item};
+
 use crate::bootstrap::config::ENV_VAR_CORS_PERMISSIVE;
 use crate::common::AppData;
+
+//fixme we may use tower_http::auth layer
+use super::contexts::{about, item, room, shelf, user};
 
 pub const API_VERSION_URL_PREFIX: &str = "api/v1";
 
@@ -32,7 +34,6 @@ pub fn router(app_data: Arc<AppData>) -> Router {
         .route("/health_check", get(health_check_handler))
         .nest(&format!("/{API_VERSION_URL_PREFIX}"), v1_api_routes)
         .fallback(fallback);
-
 
     let router = if env::var(ENV_VAR_CORS_PERMISSIVE).is_ok() {
         router.layer(CorsLayer::permissive())

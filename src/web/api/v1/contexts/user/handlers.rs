@@ -1,15 +1,16 @@
 use std::sync::Arc;
 
-use axum::extract::{self, Extension, Host, Path};
+use axum::extract::{Extension, Host, Path};
 use axum::response::{IntoResponse, Response};
 use axum::Json;
 use serde::Deserialize;
 
-use super::forms::{JsonWebToken, LoginForm, RegistrationForm};
-use super::responses;
 use crate::common::AppData;
 use crate::web::api::v1::extractors::bearer_token::Extract;
 use crate::web::api::v1::responses::OkResponseData;
+
+use super::forms::{JsonWebToken, LoginForm, RegistrationForm};
+use super::responses;
 
 // Registration
 
@@ -73,6 +74,7 @@ pub async fn login_handler(Extension(app_data): Extension<Arc<AppData>>, Json(lo
         Err(error) => error.into_response(),
     }
 }
+
 /// Who am I
 ///
 /// # Errors

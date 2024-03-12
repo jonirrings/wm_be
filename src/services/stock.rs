@@ -1,10 +1,11 @@
+use std::sync::Arc;
+
 use crate::common::ListingSpec;
 use crate::databases::database::{Database, Error, Listing};
 use crate::errors::ServiceError;
 use crate::models::item::{ItemId, ItemInRoom, ItemOnShelf, ItemXShelf};
 use crate::models::room::RoomId;
 use crate::models::shelf::ShelfId;
-use std::sync::Arc;
 
 pub struct Service {
     stock_repository: Arc<DbStockRepository>,

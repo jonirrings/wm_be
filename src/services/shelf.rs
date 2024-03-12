@@ -1,9 +1,10 @@
+use std::sync::Arc;
+
 use crate::common::{BatchDelResult, ListingSpec};
 use crate::databases::database::{Database, Error, Listing};
 use crate::errors::ServiceError;
 use crate::models::room::RoomId;
 use crate::models::shelf::{Shelf, ShelfId};
-use std::sync::Arc;
 
 pub struct Service {
     shelf_repository: Arc<DbShelfRepository>,
