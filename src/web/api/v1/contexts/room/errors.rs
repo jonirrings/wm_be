@@ -6,11 +6,11 @@ use crate::web::api::v1::responses::{json_error_response, ErrorResponseData};
 
 #[derive(Debug, Display, PartialEq, Eq, Error)]
 pub enum Request {
-    #[display(fmt = "provided ID for Room is not valid.")]
+    #[display("provided ID for Room is not valid.")]
     InvalidRoomId,
-    #[display(fmt = "room title bytes are nota valid UTF8 string.")]
+    #[display("room title bytes are nota valid UTF8 string.")]
     NameIsNotValidUtf8,
-    #[display(fmt = "room description bytes are nota valid UTF8 string.")]
+    #[display("room description bytes are nota valid UTF8 string.")]
     DescriptionIsNotValidUtf8,
 }
 

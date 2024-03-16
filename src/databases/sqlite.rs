@@ -49,7 +49,7 @@ impl Database for Sqlite {
         // start db transaction
         let mut tx = conn.begin().await.map_err(|_| Error::TransactionError)?;
         // create the user account and get the user id
-        let sql = "INSERT INTO users (created_at) VALUES (datetime('now')";
+        let sql = "INSERT INTO users (created_at) VALUES (datetime('now'))";
         let user_id = query(sql)
             .execute(&mut *tx)
             .await

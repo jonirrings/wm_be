@@ -19,9 +19,12 @@ max_password_length = 64
 secret_key = "MaxVerstappenWC2021"
 
 [database]
-#connect_url = "sqlite://storage/database/wm.sqlite?mode=rwc"
-connect_url = "mysql://wm:Ware@House2@localhost:3306/wm"
-# connect_url = "postgresql://wm:Ware@House@localhost:5432/wm"
+connect_url = "sqlite://storage/database/wm.sqlite?mode=rwc"
+#connect_url = "mysql://wm:Ware@House2@localhost:3306/wm"
+#connect_url = "postgresql://wm:Ware@House@localhost:5432/wm"
+
+[mq]
+connect_url = "todo"
 
 [mail]
 email_verification_enabled = false

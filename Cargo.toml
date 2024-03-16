@@ -33,13 +33,14 @@ version = "0.1.0"
 argon2 = "0.5.3"
 #async-graphql = "7.0.0"
 async-trait = "0.1.77"
-axum = { version = "0.7.4", features = ["multipart", "http2", "ws", 'tracing'] }
-chrono = { version = "0.4.31", default-features = false, features = ["clock"] }
-config = "0.13.4"
-derive_more = "0.99.17"
+axum = { version = "^0.7.4", features = ["multipart", "http2", "ws", 'tracing'] }
+axum-extra = { version = "^0.9.2", features = ["typed-header"] }
+chrono = { version = "^0.4.31", default-features = false, features = ["clock"] }
+config = "^0.14.0"
+derive_more = { version = "^1.0.0", features = ["full"] }
 email_address = "0.2.4"
-fern = "0.6.2"
-futures = "0.3.30"
+fern = "^0.7.0"
+futures = "^0.3.30"
 hyper = "1.1.0"
 jsonwebtoken = "9"
 lazy_static = "1.4.0"
@@ -51,21 +52,24 @@ pbkdf2 = { version = "0.12.2", features = ["simple"] }
 rand_core = { version = "0.6.4", features = ["std"] }
 regex = "1.10.2"
 rustversion = "1.0.14"
-serde = { version = "1", features = ["rc"] }
-serde_bencode = "0"
-serde_bytes = "0"
-serde_derive = "1"
-serde_json = "1"
+serde = { version = "^1", features = ["rc"] }
+serde_bencode = "^0"
+serde_bytes = "^0"
+serde_derive = "^1"
+serde_json = "^1"
 sha-1 = "0"
-sqlx = { version = "0.7", features = ["migrate", "any", "mysql", "sqlite", "postgres", "runtime-tokio-native-tls", "time"] }
+sqlx = { version = "^0", features = ["migrate", "any", "mysql", "sqlite", "postgres", "runtime-tokio-native-tls", "time"] }
 tera = { version = "1", default-features = false }
-thiserror = "1.0.56"
+thiserror = "2.0.3"
 tokio = { version = "1", features = ["fs", "io-util", "macros", "net", "rt-multi-thread", "signal", "sync", "time"] }
+tokio-stream = "^0.1.15"
+tokio-tungstenite = "^0.24.0"
 toml = "0.8.8"
-tower-http = { version = "0.5.1", features = ["auth", "compression-full", "cors", "timeout", "trace"] }
+tower-http = { version = "^0.5.1", features = ["auth", "compression-full", "cors", "timeout", "trace"] }
 time = { version = "0.3.34", features = ["serde-human-readable"] }
+
 [dev-dependencies]
 rand = "0"
 tempfile = "3"
-uuid = { version = "1", features = ["v4"] }
-which = "5"
+uuid = { version = "^1", features = ["v4"] }
+which = "^7.0.0"
