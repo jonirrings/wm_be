@@ -10,115 +10,115 @@ pub type ServiceResult<V> = Result<V, ServiceError>;
 #[derive(Debug, Display, PartialEq, Eq, Error)]
 #[allow(dead_code)]
 pub enum ServiceError {
-    #[display(fmt = "internal server error")]
+    #[display("internal server error")]
     InternalServerError,
-    #[display(fmt = "Database Connection Pool Failed")]
+    #[display("Database Connection Pool Failed")]
     DBConnectionPoolError,
-    #[display(fmt = "Database Transaction Failed")]
+    #[display("Database Transaction Failed")]
     DBTransactionError,
 
-    #[display(fmt = "This server is is closed for registration. Contact admin if this is unexpected")]
+    #[display("This server is is closed for registration. Contact admin if this is unexpected")]
     ClosedForRegistration,
 
-    #[display(fmt = "Email is required")] //405j
+    #[display("Email is required")] //405j
     EmailMissing,
-    #[display(fmt = "Please enter a valid email address")] //405j
+    #[display("Please enter a valid email address")] //405j
     EmailInvalid,
 
-    #[display(fmt = "The value you entered for URL is not a URL")] //405j
+    #[display("The value you entered for URL is not a URL")] //405j
     NotAUrl,
 
-    #[display(fmt = "Invalid username/email or password")]
+    #[display("Invalid username/email or password")]
     WrongPasswordOrUsername,
-    #[display(fmt = "Username not found")]
+    #[display("Username not found")]
     UsernameNotFound,
-    #[display(fmt = "User not found")]
+    #[display("User not found")]
     UserNotFound,
 
-    #[display(fmt = "Account not found")]
+    #[display("Account not found")]
     AccountNotFound,
 
     /// when the value passed contains profanity
-    #[display(fmt = "Can't allow profanity in usernames")]
+    #[display("Can't allow profanity in usernames")]
     ProfanityError,
     /// when the value passed contains blacklisted words
     /// see [blacklist](https://github.com/shuttlecraft/The-Big-Username-Blacklist)
-    #[display(fmt = "Username contains blacklisted words")]
+    #[display("Username contains blacklisted words")]
     BlacklistError,
     /// when the value passed contains characters not present
     /// in [UsernameCaseMapped](https://tools.ietf.org/html/rfc8265#page-7)
     /// profile
-    #[display(fmt = "username_case_mapped violation")]
+    #[display("username_case_mapped violation")]
     UsernameCaseMappedError,
 
-    #[display(fmt = "Password too short")]
+    #[display("Password too short")]
     PasswordTooShort,
-    #[display(fmt = "Username too long")]
+    #[display("Username too long")]
     PasswordTooLong,
-    #[display(fmt = "Passwords don't match")]
+    #[display("Passwords don't match")]
     PasswordsDontMatch,
 
     /// when the a username is already taken
-    #[display(fmt = "Username not available")]
+    #[display("Username not available")]
     UsernameTaken,
 
-    #[display(fmt = "Username contains illegal characters")]
+    #[display("Username contains illegal characters")]
     UsernameInvalid,
 
     /// email is already taken
-    #[display(fmt = "Email not available")]
+    #[display("Email not available")]
     EmailTaken,
 
-    #[display(fmt = "Please verify your email before logging in")]
+    #[display("Please verify your email before logging in")]
     EmailNotVerified,
 
     /// when the a token name is already taken
     /// token not found
-    #[display(fmt = "Token not found. Please sign in.")]
+    #[display("Token not found. Please sign in.")]
     TokenNotFound,
 
     /// token expired
-    #[display(fmt = "Token expired. Please sign in again.")]
+    #[display("Token expired. Please sign in again.")]
     TokenExpired,
 
-    #[display(fmt = "Token invalid.")]
+    #[display("Token invalid.")]
     /// token invalid
     TokenInvalid,
 
-    #[display(fmt = "Some mandatory metadata fields are missing.")]
+    #[display("Some mandatory metadata fields are missing.")]
     MissingMandatoryMetadataFields,
 
-    #[display(fmt = "Unauthorized action.")]
+    #[display("Unauthorized action.")]
     Unauthorized,
 
-    #[display(fmt = "Could not whitelist torrent.")]
+    #[display("Could not whitelist torrent.")]
     WhitelistingError,
 
-    #[display(fmt = "Failed to send verification email.")]
+    #[display("Failed to send verification email.")]
     FailedToSendVerificationEmail,
 
-    #[display(fmt = "Database error.")]
+    #[display("Database error.")]
     DatabaseError,
 
-    #[display(fmt = "Room not found")]
+    #[display("Room not found")]
     RoomNotFound,
-    #[display(fmt = "Name not valid, length [4,20)")]
+    #[display("Name not valid, length [4,20)")]
     NameNotValid,
-    #[display(fmt = "Description not valid, max length 200")]
+    #[display("Description not valid, max length 200")]
     DescNotValid,
-    #[display(fmt = "Payload content required")]
+    #[display("Payload content required")]
     PayloadNotValid,
-    #[display(fmt = "Shelf not found")]
+    #[display("Shelf not found")]
     ShelfNotFound,
-    #[display(fmt = "Item not found")]
+    #[display("Item not found")]
     ItemNotFound,
-    #[display(fmt = "Insufficient Item")]
+    #[display("Insufficient Item")]
     InsufficientItem,
-    #[display(fmt = "Count must be positive")]
+    #[display("Count must be positive")]
     CountMustBePositive,
-    #[display(fmt = "Source must be positive")]
+    #[display("Source must be positive")]
     SourceMustBePositive,
-    #[display(fmt = "Target must be positive")]
+    #[display("Target must be positive")]
     TargetMustBePositive,
 }
 
