@@ -11,6 +11,8 @@ use tower_http::cors::CorsLayer;
 
 use crate::bootstrap::config::ENV_VAR_CORS_PERMISSIVE;
 use crate::common::AppData;
+use crate::web::api::v1::contexts::evt::sse::sse_handler;
+use crate::web::api::v1::contexts::evt::wss::ws_handler;
 
 //fixme we may use tower_http::auth layer
 use super::contexts::{about, item, room, shelf, user};
@@ -30,8 +32,10 @@ pub fn router(app_data: Arc<AppData>) -> Router {
         .nest("/items", item::routes::router());
 
     let router = Router::new()
-        .nest("/info", about::routes::router())
         .route("/health_check", get(health_check_handler))
+        .route("/sse", get(sse_handler))
+        .route("/wss", get(ws_handler))
+        .nest("/info", about::routes::router())
         .nest(&format!("/{API_VERSION_URL_PREFIX}"), v1_api_routes)
         .fallback(fallback);
 
